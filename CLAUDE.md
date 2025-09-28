@@ -3,6 +3,9 @@
 ## Project Overview
 A fully functional web-based Match-3 puzzle game featuring alien characters, built with Phaser.js and TypeScript. The game includes a complete scoring system, countdown timer, cascading matches, and polished animations.
 
+Repo: https://github.com/natethegreat418/cosmic-matcher
+Live project: 
+
 ## Tech Stack
 - **Frontend**: Phaser.js (game framework) with SVG sprites
 - **Language**: TypeScript with strict mode
@@ -175,13 +178,5 @@ export const GAME_CONFIG = {
 - **Efficient Match Detection**: O(n) grid scanning
 - **Batched Animations**: Multiple tiles animate simultaneously
 - **Memory Management**: Proper cleanup of game objects
-
-## Future Enhancements
-- Sound effects and background music
-- Particle effects for big combos
-- Power-ups and special tiles
-- Multiple difficulty levels
-- High score persistence
-- Mobile touch controls
 
 The game represents a complete, polished Match-3 experience with engaging gameplay, smooth animations, and a cohesive cosmic alien theme.

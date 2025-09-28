@@ -1,0 +1,19 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <!-- Plasma Pink Alien - Energy Being -->
+    <ellipse cx="50" cy="65" rx="23" ry="18" fill="#EC4899"/>
+    <ellipse cx="50" cy="41" rx="19" ry="23" fill="#EC4899"/>
+    <circle cx="46" cy="37" r="2.5" fill="#ffffff"/>
+    <circle cx="54" cy="37" r="2.5" fill="#ffffff"/>
+    <!-- Energy rays emanating outward (smaller) -->
+    <path d="M30 45 L25 42" stroke="#f472b6" stroke-width="2" stroke-linecap="round"/>
+    <path d="M70 45 L75 42" stroke="#f472b6" stroke-width="2" stroke-linecap="round"/>
+    <path d="M50 22 L50 17" stroke="#f472b6" stroke-width="2" stroke-linecap="round"/>
+    <path d="M35 32 L30 27" stroke="#f472b6" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M65 32 L70 27" stroke="#f472b6" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M35 72 L30 77" stroke="#f472b6" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M65 72 L70 77" stroke="#f472b6" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M50 78 L50 83" stroke="#f472b6" stroke-width="2" stroke-linecap="round"/>
+    <!-- Energy core -->
+    <circle cx="50" cy="55" r="4" fill="#f472b6" opacity="0.8"/>
+    <circle cx="50" cy="55" r="2" fill="#fbbf24"/>
+</svg>

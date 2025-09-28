@@ -15,12 +15,12 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#2a2a2a');
 
     // Load alien SVG sprites
-    this.load.svg('deepSpaceBlue', '/src/assets/aliens/deepSpaceBlue.svg', { width: 60, height: 60 });
-    this.load.svg('nebulaPurple', '/src/assets/aliens/nebulaPurple.svg', { width: 60, height: 60 });
-    this.load.svg('cosmicTeal', '/src/assets/aliens/cosmicTeal.svg', { width: 60, height: 60 });
-    this.load.svg('solarGold', '/src/assets/aliens/solarGold.svg', { width: 60, height: 60 });
-    this.load.svg('meteorSilver', '/src/assets/aliens/meteorSilver.svg', { width: 60, height: 60 });
-    this.load.svg('plasmaPink', '/src/assets/aliens/plasmaPink.svg', { width: 60, height: 60 });
+    this.load.svg('deepSpaceBlue', '/aliens/deepSpaceBlue.svg', { width: 60, height: 60 });
+    this.load.svg('nebulaPurple', '/aliens/nebulaPurple.svg', { width: 60, height: 60 });
+    this.load.svg('cosmicTeal', '/aliens/cosmicTeal.svg', { width: 60, height: 60 });
+    this.load.svg('solarGold', '/aliens/solarGold.svg', { width: 60, height: 60 });
+    this.load.svg('meteorSilver', '/aliens/meteorSilver.svg', { width: 60, height: 60 });
+    this.load.svg('plasmaPink', '/aliens/plasmaPink.svg', { width: 60, height: 60 });
   }
 
   create(): void {
