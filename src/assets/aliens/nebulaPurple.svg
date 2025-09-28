@@ -1,0 +1,16 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <!-- Nebula Purple Alien - Mystic -->
+    <ellipse cx="50" cy="65" rx="22" ry="18" fill="#8B5CF6"/>
+    <ellipse cx="50" cy="42" rx="18" ry="22" fill="#8B5CF6"/>
+    <circle cx="46" cy="38" r="2.5" fill="#ffffff"/>
+    <circle cx="54" cy="38" r="2.5" fill="#ffffff"/>
+    <!-- Crystal crown -->
+    <polygon points="50,20 45,30 55,30" fill="#a855f7"/>
+    <polygon points="50,15 48,25 52,25" fill="#c084fc"/>
+    <!-- Flowing scarf -->
+    <path d="M35 48 Q25 45 30 52 Q35 58 40 55 Q45 52 42 48" fill="#a855f7" opacity="0.8"/>
+    <path d="M65 48 Q75 45 70 52 Q65 58 60 55 Q55 52 58 48" fill="#a855f7" opacity="0.8"/>
+    <!-- Robes -->
+    <path d="M35 75 Q50 85 65 75 Q60 65 50 70 Q40 65 35 75" fill="#7c3aed"/>
+    <circle cx="50" cy="58" r="3" fill="#c084fc"/>
+</svg>
