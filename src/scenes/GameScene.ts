@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { Grid } from '../game/Grid';
 import { GameState } from '../game/GameState';
+import { GameProgressManager } from '../game/GameProgressManager';
 import { GAME_CONFIG } from '../types';
 
 export class GameScene extends Phaser.Scene {
@@ -24,28 +25,64 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(): void {
-    // Phase 4: Complete game with scoring and timer
+    const progressManager = GameProgressManager.getInstance();
+    const currentRound = progressManager.getCurrentRound();
+    const totalScore = progressManager.getTotalScore();
+    const speedMultiplier = progressManager.getTimerSpeedMultiplier();
+
+    // Round indicator
     this.add.text(
       GAME_CONFIG.BOARD_OFFSET_X,
       30,
-      'Cosmic Match-3 - Complete Game!',
+      `Round ${currentRound} / 10`,
       {
         fontSize: '28px',
-        color: '#ffffff',
-        fontFamily: 'Arial, sans-serif'
+        color: '#00F5FF',
+        fontFamily: 'Arial, sans-serif',
+        fontStyle: 'bold'
       }
     );
 
-    this.add.text(
-      GAME_CONFIG.BOARD_OFFSET_X,
-      60,
-      'Score as much as you can in 60 seconds!',
-      {
-        fontSize: '16px',
-        color: '#cccccc',
-        fontFamily: 'Arial, sans-serif'
-      }
-    );
+    // Speed warning for higher rounds
+    if (speedMultiplier > 1) {
+      this.add.text(
+        GAME_CONFIG.BOARD_OFFSET_X + 180,
+        35,
+        `(${speedMultiplier}x Speed!)`,
+        {
+          fontSize: '20px',
+          color: speedMultiplier > 2 ? '#EC4899' : '#F59E0B',
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'italic'
+        }
+      );
+    }
+
+    // Total score display (if not first round)
+    if (currentRound > 1) {
+      this.add.text(
+        GAME_CONFIG.BOARD_OFFSET_X,
+        60,
+        `Total Score: ${totalScore.toLocaleString()}`,
+        {
+          fontSize: '18px',
+          color: '#F59E0B',
+          fontFamily: 'Arial, sans-serif'
+        }
+      );
+    } else {
+      // First round instructions
+      this.add.text(
+        GAME_CONFIG.BOARD_OFFSET_X,
+        60,
+        'Score as much as you can in 60 seconds!',
+        {
+          fontSize: '16px',
+          color: '#cccccc',
+          fontFamily: 'Arial, sans-serif'
+        }
+      );
+    }
 
     this.add.text(
       GAME_CONFIG.BOARD_OFFSET_X,
@@ -53,7 +90,7 @@ export class GameScene extends Phaser.Scene {
       'Big combos (5+) give bonus time!',
       {
         fontSize: '14px',
-        color: '#00F5FF', // Bright cyan for excitement
+        color: '#00F5FF',
         fontFamily: 'Arial, sans-serif'
       }
     );
@@ -69,11 +106,25 @@ export class GameScene extends Phaser.Scene {
       this._gameState
     );
 
-    // Set up game over callback to hide grid
+    // Set up game over callback to transition to next round
     this._gameState.setGameOverCallback(() => {
       if (this._grid) {
         this._grid.hideGrid();
       }
+
+      // Transition to round complete scene after a short delay
+      this.time.delayedCall(1500, () => {
+        const progressManager = GameProgressManager.getInstance();
+        const roundScore = this._gameState!.getScore();
+        const roundResult = progressManager.completeRound(roundScore);
+
+        // Add combos to round result
+        roundResult.combosAchieved = this._gameState!.getTotalCombos();
+        roundResult.timeRemaining = Math.floor(this._gameState!.getTimeRemaining());
+
+        // Pass round result to transition scene
+        this.scene.start('RoundTransitionScene', { roundResult });
+      });
     });
   }
 

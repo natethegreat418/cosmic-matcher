@@ -1,0 +1,222 @@
+# Multi-Round Progression System Specification
+
+## Overview
+Transform the single-round game into a 10-round campaign with cumulative scoring, escalating difficulty, and a shop system for purchasing upgrades between rounds.
+
+## Core Changes Required
+
+### 1. Game State Management
+```typescript
+interface GameProgress {
+  currentRound: number;           // 1-10
+  totalScore: number;             // Sum of all round scores
+  roundScores: number[];          // Individual round scores
+  availablePoints: number;        // Points available for shop
+  spentPoints: number;            // Points spent on upgrades
+  ownedUpgrades: UpgradeType[];   // Active upgrades
+  roundTimer: number;             // Current round's timer duration
+}
+```
+
+### 2. Round Progression Logic
+- **Round 1-2**: Normal countdown timer
+- **Round 3-4**: 1.5x speed countdown timer (1.5s at a time per tick)
+- **Round 5-6**: 2x speed countdown timer
+- **Round 7-8**: 2.5x speed countdown timer
+- **Round 9-10**: 3x speed countdown timer
+
+### 3. Shop System Between Rounds
+
+#### Shop Items (Initial Set)
+```typescript
+interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  effect: UpgradeEffect;
+  maxPurchases: number;
+}
+
+// Example items:
+const shopItems = [
+  {
+    id: 'time_bonus',
+    name: 'Time Boost',
+    description: '+5 seconds to round timer',
+    cost: 500,
+    maxPurchases: 3
+  },
+  {
+    id: 'score_multiplier',
+    name: 'Score Multiplier',
+    description: '+20% score for next round',
+    cost: 800,
+    maxPurchases: 5
+  },
+  {
+    id: 'combo_boost',
+    name: 'Combo Master',
+    description: 'Combos give +50% more time',
+    cost: 1000,
+    maxPurchases: 2
+  },
+  {
+    id: 'lucky_start',
+    name: 'Lucky Board',
+    description: 'Start round with guaranteed matches',
+    cost: 600,
+    maxPurchases: 1
+  }
+];
+```
+
+## Implementation Steps
+
+### Phase 1: Core Round System
+1. **Create new scenes:**
+   - `RoundTransitionScene` - shows round summary and shop
+   - `GameOverScene` - shows final results
+   - Modify existing `GameScene` to handle rounds
+
+2. **Update GameScene:**
+   - Add round tracking
+   - Implement dynamic timer based on round
+   - Save round score when time expires
+   - Transition to shop scene instead of game over
+
+3. **Create RoundTransitionScene:**
+   - Display: "Round X Complete!"
+   - Show: Round score, Total score, Available points
+   - Button: "Continue to Shop" or "Next Round"
+
+### Phase 2: Shop System
+4. **Create ShopScene:**
+   - Display available points
+   - Show purchasable items with costs
+   - Handle purchase logic
+   - Apply upgrades to game state
+   - "Start Next Round" button
+
+5. **Create upgrade system:**
+   - `UpgradeManager` class to track and apply effects
+   - Modify game logic to respect active upgrades
+   - Persistent upgrade storage between rounds
+
+### Phase 3: UI/UX Polish
+6. **Update existing UI:**
+   - Show current round number
+   - Display total score alongside round score
+   - Add progress indicator (Round X/10)
+
+7. **Create GameOverScene:**
+   - Final score breakdown
+   - Round-by-round scoring
+   - "Play Again" functionality
+
+## Detailed Implementation
+
+### Step 1: Game State Refactor
+```typescript
+// New: GameProgressManager
+export class GameProgressManager {
+  private progress: GameProgress;
+  
+  startNewGame(): void;
+  completeRound(roundScore: number): void;
+  getRoundTimer(): number;
+  canAfford(cost: number): boolean;
+  purchaseUpgrade(upgradeId: string): boolean;
+  getActiveUpgrades(): UpgradeType[];
+  isGameComplete(): boolean;
+}
+```
+
+### Step 2: Scene Architecture
+```
+MenuScene → GameScene (Round 1) → RoundTransitionScene → ShopScene → 
+GameScene (Round 2) → ... → GameOverScene
+```
+
+### Step 3: GameScene Modifications
+- Constructor accepts round number and active upgrades
+- Timer starts at calculated duration
+- When timer expires: save score, transition to RoundTransitionScene
+- Apply upgrade effects during gameplay
+
+### Step 4: Shop Implementation
+```typescript
+export class ShopScene extends Phaser.Scene {
+  private availableItems: ShopItem[];
+  private gameProgress: GameProgress;
+  
+  create(): void {
+    // Display shop UI
+    // Show available points
+    // Create purchase buttons
+  }
+  
+  purchaseItem(itemId: string): void {
+    // Deduct points
+    // Add upgrade to progress
+    // Update UI
+  }
+}
+```
+
+### Step 5: Upgrade Effects Implementation
+```typescript
+export class UpgradeManager {
+  applyTimeBonus(baseTime: number): number;
+  applyScoreMultiplier(baseScore: number): number;
+  applyComboTimeBonus(comboSize: number): number;
+  generateLuckyBoard(): TileColor[][];
+}
+```
+
+## Testing Strategy
+
+### Step 1 Testing:
+- Verify round progression (1→2→3...)
+- Confirm timer reduction works correctly
+- Test score accumulation
+
+### Step 2 Testing:
+- Test shop purchase mechanics
+- Verify upgrade persistence between rounds
+- Test insufficient funds handling
+
+### Step 3 Testing:
+- End-to-end playthrough (all 10 rounds)
+- Test different upgrade combinations
+- Verify final score calculation
+
+## Files to Create/Modify
+
+### New Files:
+- `src/scenes/RoundTransitionScene.ts`
+- `src/scenes/ShopScene.ts` 
+- `src/scenes/GameOverScene.ts`
+- `src/game/GameProgressManager.ts`
+- `src/game/UpgradeManager.ts`
+- `src/game/ShopSystem.ts`
+- `src/types/Progress.ts`
+
+### Modified Files:
+- `src/scenes/GameScene.ts` - Add round awareness
+- `src/main.ts` - Register new scenes
+- `src/types/index.ts` - Add new types
+
+## Development Order:
+1. Implement GameProgressManager and basic round system
+2. Create RoundTransitionScene with basic "next round" flow
+3. Add shop system with simple items
+4. Implement upgrade effects in gameplay
+5. Add UI polish and final game over screen
+6. Test and balance shop costs/effects
+
+## Success Criteria:
+- Player can complete all 10 rounds
+- Shop allows meaningful choices that affect gameplay
+- Timer progression creates escalating challenge
+- Score system encourages both round performance and strategic spending

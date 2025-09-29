@@ -1,17 +1,21 @@
 import * as Phaser from 'phaser';
+import { GameProgressManager } from './GameProgressManager';
 
 /**
  * Manages the game state including score, timer, combos, and UI updates
- * Phase 4: Complete game state management with countdown timer
+ * Now supports multi-round progression with speed multipliers
  */
 export class GameState {
   private score: number = 0;
-  private timeRemaining: number = 60; // 60 seconds (1 minute)
+  private timeRemaining: number = 60; // Always displays as 60 seconds
+  private actualTimeElapsed: number = 0; // Tracks real time for speed multiplier
   private currentCombo: number = 0;
   private highestCombo: number = 0;
+  private totalCombos: number = 0; // Track total combos for round summary
   private isGameOver: boolean = false;
   private timerEvent?: Phaser.Time.TimerEvent;
   private onGameOverCallback?: () => void;
+  private speedMultiplier: number = 1.0;
 
   // UI Text elements
   private scoreText?: Phaser.GameObjects.Text;
@@ -29,6 +33,9 @@ export class GameState {
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
+    const progressManager = GameProgressManager.getInstance();
+    this.speedMultiplier = progressManager.getTimerSpeedMultiplier();
+    this.timeRemaining = progressManager.getRoundTimer(); // Always 60
     this.initializeUI();
     this.startTimer();
   }
@@ -110,12 +117,12 @@ export class GameState {
   }
 
   /**
-   * Starts the countdown timer
+   * Starts the countdown timer with speed multiplier support
    */
   private startTimer(): void {
-    // Update timer every second
+    // Update timer every second (real time)
     this.timerEvent = this.scene.time.addEvent({
-      delay: 1000, // 1 second
+      delay: 1000, // 1 second real time
       callback: this.updateTimer,
       callbackScope: this,
       loop: true
@@ -123,12 +130,20 @@ export class GameState {
   }
 
   /**
-   * Updates the countdown timer
+   * Updates the countdown timer with speed multiplier
    */
   private updateTimer(): void {
     if (this.isGameOver) return;
 
-    this.timeRemaining--;
+    // Decrease time by the speed multiplier amount
+    this.timeRemaining -= this.speedMultiplier;
+    this.actualTimeElapsed += 1; // Track real seconds elapsed
+
+    // Ensure time doesn't go negative
+    if (this.timeRemaining < 0) {
+      this.timeRemaining = 0;
+    }
+
     this.updateTimerDisplay();
 
     // Check for game over
@@ -209,6 +224,9 @@ export class GameState {
         const bonusTime = (cascadeNumber - this.TIME_BONUS_THRESHOLD + 1) * 2; // 2 seconds per combo level above threshold
         this.addBonusTime(bonusTime);
       }
+
+      // Track total combos achieved
+      this.totalCombos++;
 
       console.log(`Cascade x${cascadeNumber}! Score multiplier: ${multiplier.toFixed(2)}x`);
     } else {
@@ -325,7 +343,7 @@ export class GameState {
   }
 
   /**
-   * Triggers game over state
+   * Triggers game over state (round end)
    */
   private endGame(): void {
     this.isGameOver = true;
@@ -335,28 +353,13 @@ export class GameState {
       this.timerEvent.destroy();
     }
 
-    // Call the game over callback to hide the grid
+    // Call the game over callback to hide the grid and transition
     if (this.onGameOverCallback) {
       this.onGameOverCallback();
     }
 
-    if (this.gameOverText) {
-      const finalText = `TIME'S UP!\n\nFinal Score: ${this.score.toLocaleString()}\nBest Combo: x${this.highestCombo}`;
-      this.gameOverText.setText(finalText);
-      this.gameOverText.setVisible(true);
-
-      // Animate game over text
-      this.gameOverText.setScale(0);
-      this.scene.tweens.add({
-        targets: this.gameOverText,
-        scaleX: 1,
-        scaleY: 1,
-        duration: 500,
-        ease: 'Back.easeOut'
-      });
-    }
-
-    console.log(`Game Over! Final Score: ${this.score}, Best Combo: x${this.highestCombo}`);
+    // Don't show game over text here - will be handled by RoundTransitionScene
+    console.log(`Round Complete! Score: ${this.score}, Best Combo: x${this.highestCombo}`);
   }
 
   /**
@@ -393,6 +396,13 @@ export class GameState {
    */
   public getTimeRemaining(): number {
     return this.timeRemaining;
+  }
+
+  /**
+   * Gets total combos achieved this round
+   */
+  public getTotalCombos(): number {
+    return this.totalCombos;
   }
 
   /**
