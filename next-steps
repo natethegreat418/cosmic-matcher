@@ -93,8 +93,8 @@ const shopItems = [
 ### Phase 2: Shop System
 4. **Create ShopScene:**
    - Display available points
-   - Show purchasable items with costs
-   - Handle purchase logic
+   - Show purchasable items with cost (to start there will be ONLY 1 item "Bonus Time - 10s" which costs 200 points)
+   - Handle purchase logic (purchases substract from total score)
    - Apply upgrades to game state
    - "Start Next Round" button
 

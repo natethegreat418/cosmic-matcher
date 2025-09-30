@@ -15,3 +15,17 @@ export interface RoundResult {
   timeRemaining: number;
   combosAchieved: number;
 }
+
+export interface ShopItem {
+  id: string;
+  name: string;
+  description: string;
+  cost: number;
+  maxPurchases: number;
+  purchaseCount: number;
+}
+
+export interface PurchaseResult {
+  success: boolean;
+  message: string;
+}

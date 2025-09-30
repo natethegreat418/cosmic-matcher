@@ -1,4 +1,5 @@
 import type { GameProgress, RoundResult } from '../types/Progress';
+import { ShopSystem } from './ShopSystem';
 
 export class GameProgressManager {
   private static instance: GameProgressManager | null = null;
@@ -30,6 +31,10 @@ export class GameProgressManager {
 
   public startNewGame(): void {
     this.progress = this.initializeProgress();
+
+    // Reset shop purchases for new game
+    const shopSystem = ShopSystem.getInstance();
+    shopSystem.resetPurchases();
   }
 
   public completeRound(roundScore: number): RoundResult {
@@ -103,6 +108,8 @@ export class GameProgressManager {
     }
     this.progress.availablePoints -= cost;
     this.progress.spentPoints += cost;
+    // Spending reduces your total score - strategic tradeoff!
+    this.progress.totalScore -= cost;
     return true;
   }
 

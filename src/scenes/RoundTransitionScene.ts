@@ -62,7 +62,7 @@ export class RoundTransitionScene extends Phaser.Scene {
       250,
       `Total Score: ${progressManager.getTotalScore().toLocaleString()}`,
       {
-        fontSize: '28px',
+        fontSize: '32px',
         color: '#F59E0B', // Solar gold
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -70,20 +70,8 @@ export class RoundTransitionScene extends Phaser.Scene {
     );
     totalText.setOrigin(0.5, 0.5);
 
-    // Available points for shop
-    this.add.text(
-      centerX,
-      320,
-      `Points Available: ${progressManager.getAvailablePoints().toLocaleString()}`,
-      {
-        fontSize: '24px',
-        color: '#00F5FF',
-        fontFamily: 'Arial, sans-serif'
-      }
-    ).setOrigin(0.5, 0.5);
-
     // Progress indicator
-    this.createProgressIndicator(centerX, 400);
+    this.createProgressIndicator(centerX, 340);
 
     // Next round preview with speed warning
     const nextRound = progressManager.getCurrentRound();
@@ -97,7 +85,7 @@ export class RoundTransitionScene extends Phaser.Scene {
 
       this.add.text(
         centerX,
-        480,
+        420,
         `Next: Round ${nextRound}${speedWarning}`,
         {
           fontSize: '20px',
@@ -111,7 +99,7 @@ export class RoundTransitionScene extends Phaser.Scene {
     // Continue button
     const continueBtn = this.add.rectangle(
       centerX,
-      560,
+      500,
       200,
       60,
       0x00F5FF
@@ -120,8 +108,8 @@ export class RoundTransitionScene extends Phaser.Scene {
 
     const btnText = this.add.text(
       centerX,
-      560,
-      nextRound <= 10 ? 'Next Round' : 'View Results',
+      500,
+      nextRound <= 10 ? 'Visit Shop' : 'View Results',
       {
         fontSize: '24px',
         color: '#000000',
@@ -159,7 +147,7 @@ export class RoundTransitionScene extends Phaser.Scene {
     // Hint text
     this.add.text(
       centerX,
-      620,
+      560,
       'Press SPACE to continue',
       {
         fontSize: '14px',
@@ -223,8 +211,8 @@ export class RoundTransitionScene extends Phaser.Scene {
       // Go to final game over scene
       this.scene.start('GameOverScene');
     } else {
-      // For Phase 1, go directly to next round (Phase 2 will add shop)
-      this.scene.start('GameScene');
+      // Go to shop before next round
+      this.scene.start('ShopScene');
     }
   }
 }

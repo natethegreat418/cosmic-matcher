@@ -2,6 +2,7 @@ import './style.css'
 import * as Phaser from 'phaser';
 import { GameScene } from './scenes/GameScene';
 import { RoundTransitionScene } from './scenes/RoundTransitionScene';
+import { ShopScene } from './scenes/ShopScene';
 import { GameOverScene } from './scenes/GameOverScene';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -10,7 +11,7 @@ const config: Phaser.Types.Core.GameConfig = {
   height: 700,
   parent: 'app',
   backgroundColor: '#2a2a2a',
-  scene: [GameScene, RoundTransitionScene, GameOverScene],
+  scene: [GameScene, RoundTransitionScene, ShopScene, GameOverScene],
   physics: {
     default: 'arcade',
     arcade: {

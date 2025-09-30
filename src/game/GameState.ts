@@ -1,5 +1,7 @@
 import * as Phaser from 'phaser';
 import { GameProgressManager } from './GameProgressManager';
+import { UpgradeManager } from './UpgradeManager';
+import { ShopSystem } from './ShopSystem';
 
 /**
  * Manages the game state including score, timer, combos, and UI updates
@@ -34,8 +36,18 @@ export class GameState {
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
     const progressManager = GameProgressManager.getInstance();
+    const upgradeManager = UpgradeManager.getInstance();
+    const shopSystem = ShopSystem.getInstance();
+
     this.speedMultiplier = progressManager.getTimerSpeedMultiplier();
-    this.timeRemaining = progressManager.getRoundTimer(); // Always 60
+
+    // Apply time bonus upgrades to base timer
+    const baseTime = progressManager.getRoundTimer(); // 60 seconds
+    this.timeRemaining = upgradeManager.applyTimeBonus(baseTime);
+
+    // Consume the time upgrades after applying them (one-time use per round)
+    shopSystem.consumeTimeUpgrades();
+
     this.initializeUI();
     this.startTimer();
   }
