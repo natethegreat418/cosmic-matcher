@@ -1,9 +1,10 @@
 import { Tile } from './Tile';
+import { UpgradeManager } from './UpgradeManager';
 import { type TilePosition } from '../types';
 
 /**
  * Utility class for detecting matches in the grid
- * A match is 3 or more tiles of the same color in a row (horizontal or vertical)
+ * A match is 3 or more tiles of the same color in a row (horizontal, vertical, or diagonal with Phase Gun)
  */
 export class MatchDetector {
   /**
@@ -84,6 +85,102 @@ export class MatchDetector {
       }
     }
 
+    // Check diagonal matches if Phase Gun is active
+    const upgradeManager = UpgradeManager.getInstance();
+    if (upgradeManager.hasUpgrade('phase_gun')) {
+      const diagonalMatches = this.findDiagonalMatches(tiles);
+      matches.push(...diagonalMatches);
+    }
+
+    return matches;
+  }
+
+  /**
+   * Finds diagonal matches in the grid (only active with Phase Gun upgrade)
+   * @param tiles - 2D array representing the current grid
+   * @returns Array of diagonal match groups
+   */
+  private static findDiagonalMatches(tiles: (Tile | null)[][]): TilePosition[][] {
+    const matches: TilePosition[][] = [];
+    const gridHeight = tiles.length;
+    const gridWidth = tiles[0]?.length || 0;
+
+    // Check diagonal matches (top-left to bottom-right)
+    for (let startRow = 0; startRow < gridHeight; startRow++) {
+      for (let startCol = 0; startCol < gridWidth; startCol++) {
+        let currentMatch: TilePosition[] = [];
+        let currentColor: string | null = null;
+
+        // Traverse diagonal
+        let row = startRow;
+        let col = startCol;
+        while (row < gridHeight && col < gridWidth) {
+          const tile = tiles[row][col];
+
+          if (tile && tile.color === currentColor) {
+            currentMatch.push({ row, col });
+          } else {
+            if (currentMatch.length >= 3) {
+              matches.push([...currentMatch]);
+            }
+
+            if (tile) {
+              currentMatch = [{ row, col }];
+              currentColor = tile.color;
+            } else {
+              currentMatch = [];
+              currentColor = null;
+            }
+          }
+
+          row++;
+          col++;
+        }
+
+        if (currentMatch.length >= 3) {
+          matches.push([...currentMatch]);
+        }
+      }
+    }
+
+    // Check diagonal matches (top-right to bottom-left)
+    for (let startRow = 0; startRow < gridHeight; startRow++) {
+      for (let startCol = gridWidth - 1; startCol >= 0; startCol--) {
+        let currentMatch: TilePosition[] = [];
+        let currentColor: string | null = null;
+
+        // Traverse diagonal
+        let row = startRow;
+        let col = startCol;
+        while (row < gridHeight && col >= 0) {
+          const tile = tiles[row][col];
+
+          if (tile && tile.color === currentColor) {
+            currentMatch.push({ row, col });
+          } else {
+            if (currentMatch.length >= 3) {
+              matches.push([...currentMatch]);
+            }
+
+            if (tile) {
+              currentMatch = [{ row, col }];
+              currentColor = tile.color;
+            } else {
+              currentMatch = [];
+              currentColor = null;
+            }
+          }
+
+          row++;
+          col--;
+        }
+
+        if (currentMatch.length >= 3) {
+          matches.push([...currentMatch]);
+        }
+      }
+    }
+
     return matches;
   }
 
@@ -114,15 +211,20 @@ export class MatchDetector {
 
   /**
    * Checks if two positions are adjacent (horizontally or vertically)
+   * With Tractor Beam upgrade, tiles can be 2 spaces apart
    * @param pos1 - First position
    * @param pos2 - Second position
-   * @returns true if positions are adjacent
+   * @returns true if positions are within valid swap distance
    */
   public static areAdjacent(pos1: TilePosition, pos2: TilePosition): boolean {
     const rowDiff = Math.abs(pos1.row - pos2.row);
     const colDiff = Math.abs(pos1.col - pos2.col);
 
-    // Adjacent means exactly one step away in one direction, zero in the other
-    return (rowDiff === 1 && colDiff === 0) || (rowDiff === 0 && colDiff === 1);
+    // Determine max distance based on Tractor Beam upgrade
+    const upgradeManager = UpgradeManager.getInstance();
+    const maxDistance = upgradeManager.hasUpgrade('tractor_beam') ? 2 : 1;
+
+    // Valid swap means within maxDistance in one direction, zero in the other
+    return (rowDiff <= maxDistance && colDiff === 0) || (rowDiff === 0 && colDiff <= maxDistance);
   }
 }

@@ -101,8 +101,8 @@ export class RoundTransitionScene extends Phaser.Scene {
     // Progress indicator
     this.createProgressIndicator(centerX, currentY);
 
-    // Account for 2 rows on mobile (add extra space)
-    currentY += isMobile ? 125 : 80;
+    // Account for 2 rows on both mobile and desktop (add extra space)
+    currentY += isMobile ? 125 : 150;
 
     // Next round preview with speed warning
     const nextRound = progressManager.getCurrentRound();
@@ -241,14 +241,20 @@ export class RoundTransitionScene extends Phaser.Scene {
         this.createShipIcon(i, x, shipY, currentRound, shipScale);
       }
     } else {
-      // Desktop: Single row of 10 ships (horizontal)
+      // Desktop: 2 rows of 5 ships (same as mobile layout)
       const shipSpacing = 85;
+      const rowSpacing = 80;
       const shipScale = 1.0;
-      const startX = centerX - (9 * shipSpacing) / 2;
+      const shipsPerRow = 5;
 
       for (let i = 1; i <= 10; i++) {
-        const x = startX + (i - 1) * shipSpacing;
-        this.createShipIcon(i, x, y, currentRound, shipScale);
+        const row = Math.floor((i - 1) / shipsPerRow);
+        const col = (i - 1) % shipsPerRow;
+
+        const x = centerX - (shipsPerRow - 1) * shipSpacing / 2 + col * shipSpacing;
+        const shipY = y + row * rowSpacing;
+
+        this.createShipIcon(i, x, shipY, currentRound, shipScale);
       }
     }
   }
@@ -327,8 +333,18 @@ export class RoundTransitionScene extends Phaser.Scene {
     });
     btnText.setOrigin(0.5, 0.5);
 
-    // Calculate lighter hover color (add 0x202020 to each component)
-    const hoverColor = Math.min(color + 0x202020, 0xFFFFFF);
+    // Define hover colors based on button color
+    let hoverColor: number;
+    if (color === 0x00F5FF) {
+      // Cyan button - much brighter white hover
+      hoverColor = 0xFFFFFF;
+    } else if (color === 0x10B981) {
+      // Green button - lighter green hover
+      hoverColor = 0x14D89A;
+    } else {
+      // Default: slightly lighter
+      hoverColor = Math.min(color + 0x303030, 0xFFFFFF);
+    }
 
     // Button hover effect
     btn.on('pointerover', () => {

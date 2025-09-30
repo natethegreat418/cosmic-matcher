@@ -17,15 +17,42 @@ export class ShopSystem {
   }
 
   private initializeItems(): void {
-    // Start with just one simple item as specified
     this.items = [
       {
         id: 'bonus_time',
-        name: 'Quantum Time Dilation',
+        name: 'Radiation Shield',
         description: '+10 seconds to next round',
         cost: 150,
         maxPurchases: 5, // Allow multiple purchases but at increasing cost
-        purchaseCount: 0
+        purchaseCount: 0,
+        icon: '/shop/radiation-shield.png'
+      },
+      {
+        id: 'time_dilation',
+        name: 'Quantum Time Dilation',
+        description: 'Slows countdown by 0.5s per tick (one round)',
+        cost: 500,
+        maxPurchases: 5, // Single-use per round, but can stack
+        purchaseCount: 0,
+        icon: '/shop/quantum-dilation.png'
+      },
+      {
+        id: 'phase_gun',
+        name: 'Phase Gun',
+        description: 'Enables diagonal 3-tile matches',
+        cost: 3200,
+        maxPurchases: 1, // Permanent upgrade, one-time purchase
+        purchaseCount: 0,
+        icon: '/shop/phaser.png'
+      },
+      {
+        id: 'tractor_beam',
+        name: 'Tractor Beam',
+        description: 'Swap tiles from 2 spaces away',
+        cost: 1800,
+        maxPurchases: 1, // Permanent upgrade, one-time purchase
+        purchaseCount: 0,
+        icon: '/shop/tractor-beam.png'
       }
     ];
   }
@@ -97,6 +124,11 @@ export class ShopSystem {
     const timeItem = this.items.find(i => i.id === 'bonus_time');
     if (timeItem) {
       timeItem.purchaseCount = 0;
+    }
+
+    const dilationItem = this.items.find(i => i.id === 'time_dilation');
+    if (dilationItem) {
+      dilationItem.purchaseCount = 0;
     }
   }
 

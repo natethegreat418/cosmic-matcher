@@ -4,10 +4,145 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Cosmic Matcher</title>
+    <title>Cosmic Matcher - Match Aliens in Space!</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        color: #ffffff;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 700px;
+        background: rgba(42, 42, 42, 0.9);
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 50px rgba(0, 245, 255, 0.3);
+        border: 2px solid #00F5FF;
+      }
+
+      h1 {
+        font-size: 3em;
+        color: #F59E0B;
+        text-align: center;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+      }
+
+      .subtitle {
+        text-align: center;
+        color: #00F5FF;
+        font-size: 1.2em;
+        margin-bottom: 30px;
+      }
+
+      h2 {
+        color: #00F5FF;
+        font-size: 1.5em;
+        margin-top: 30px;
+        margin-bottom: 15px;
+      }
+
+      p, li {
+        line-height: 1.8;
+        color: #cccccc;
+        margin-bottom: 10px;
+      }
+
+      ul {
+        margin-left: 20px;
+        margin-bottom: 20px;
+      }
+
+      .play-button {
+        display: block;
+        width: 100%;
+        max-width: 300px;
+        margin: 40px auto 0;
+        padding: 20px 40px;
+        font-size: 1.5em;
+        font-weight: bold;
+        color: #000000;
+        background: #10B981;
+        border: none;
+        border-radius: 10px;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 5px 15px rgba(16, 185, 129, 0.4);
+      }
+
+      .play-button:hover {
+        background: #14D89A;
+        transform: scale(1.05);
+        box-shadow: 0 7px 20px rgba(16, 185, 129, 0.6);
+      }
+
+      .highlight {
+        color: #F59E0B;
+        font-weight: bold;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          padding: 25px;
+        }
+
+        h1 {
+          font-size: 2em;
+        }
+
+        .subtitle {
+          font-size: 1em;
+        }
+
+        h2 {
+          font-size: 1.2em;
+        }
+
+        p, li {
+          font-size: 0.9em;
+        }
+
+        .play-button {
+          font-size: 1.2em;
+          padding: 15px 30px;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
-    <script type="module" src="/src/main.ts"></script>
+    <div class="container">
+      <h1>🚀 COSMIC MATCHER 🛸</h1>
+      <p class="subtitle"><em>Match aliens across the galaxy</em></p>
+
+      <h2>How to Play</h2>
+      <p><strong>Objective:</strong> Score points by matching 3 or more identical aliens in <span class="highlight">10 rounds</span> of 60 seconds each.</p>
+
+      <h2>Game Mechanics</h2>
+      <ul>
+        <li><strong>Click adjacent aliens</strong> to swap them</li>
+        <li>Match <strong>3+ identical aliens</strong> horizontally or vertically</li>
+        <li><strong>Cascading matches</strong> create combos for bonus points and time</li>
+        <li>Each round gets <strong>faster</strong> - test your reflexes!</li>
+      </ul>
+
+      <h2>Power-Ups</h2>
+      <p>Visit the <span class="highlight">Cosmic Shop</span> between rounds to spend your score on upgrades. Choose carefully how you spend your valuable score!
+
+      <a href="/game.html" class="play-button">START PLAYING</a>
+    </div>
   </body>
 </html>

@@ -3,19 +3,31 @@ const isMobile = () => window.innerWidth < 768;
 
 // Calculate responsive tile size and layout
 const getTileConfig = () => {
+  const GRID_SIZE = 8;
+  const TILE_SPACING = 4;
+
   if (isMobile()) {
     const screenWidth = Math.min(window.innerWidth, 500);
     const maxGridWidth = screenWidth - 20; // 10px padding on each side
-    const tileSize = Math.floor((maxGridWidth - (7 * 4)) / 8); // 8 tiles with 4px spacing
+    const tileSize = Math.floor((maxGridWidth - ((GRID_SIZE - 1) * TILE_SPACING)) / GRID_SIZE);
     return {
       tileSize: Math.min(tileSize, 50), // Cap at 50px for mobile
       offsetX: 10,
       offsetY: 80 // Reduced space for tighter UI
     };
   }
+
+  // Desktop: Truly center the grid in the canvas
+  // Canvas: 900px, Grid: 508px
+  // Center: (900 - 508) / 2 = 196px
+  const tileSize = 60;
+  const canvasWidth = 900;
+  const gridWidth = (GRID_SIZE * tileSize) + ((GRID_SIZE - 1) * TILE_SPACING);
+  const offsetX = Math.floor((canvasWidth - gridWidth) / 2);
+
   return {
-    tileSize: 60,
-    offsetX: 100,
+    tileSize: tileSize,
+    offsetX: offsetX,
     offsetY: 120
   };
 };

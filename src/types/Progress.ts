@@ -23,6 +23,7 @@ export interface ShopItem {
   cost: number;
   maxPurchases: number;
   purchaseCount: number;
+  icon?: string; // Optional icon path
 }
 
 export interface PurchaseResult {

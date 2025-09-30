@@ -77,8 +77,10 @@ export class GameState {
       const gridWidth = (GAME_CONFIG.TILE_SIZE + GAME_CONFIG.TILE_SPACING) * GAME_CONFIG.GRID_WIDTH;
       scoreX = GAME_CONFIG.BOARD_OFFSET_X + gridWidth;
     } else {
-      timerX = 680;
-      scoreX = 680;
+      // Desktop: Position UI in top-right corner of canvas
+      // Grid is centered at 196-704, so position UI at right edge
+      timerX = 750; // Right side of canvas
+      scoreX = 750;
       uiY = 120;
     }
 
@@ -236,13 +238,21 @@ export class GameState {
   }
 
   /**
-   * Updates the countdown timer with speed multiplier
+   * Updates the countdown timer with speed multiplier and time dilation
    */
   private updateTimer(): void {
     if (this.isGameOver) return;
 
-    // Decrease time by the speed multiplier amount
-    this.timeRemaining -= this.speedMultiplier;
+    // Get time dilation slowdown effect
+    const upgradeManager = UpgradeManager.getInstance();
+    const slowdownAmount = upgradeManager.getTimerSlowdown();
+
+    // Calculate effective timer decrease: speed multiplier minus slowdown
+    // Example: speedMultiplier = 1.5, slowdown = 0.5 -> effective = 1.0
+    const effectiveDecrease = Math.max(0.1, this.speedMultiplier - slowdownAmount);
+
+    // Decrease time by the effective amount
+    this.timeRemaining -= effectiveDecrease;
     this.actualTimeElapsed += 1; // Track real seconds elapsed
 
     // Ensure time doesn't go negative

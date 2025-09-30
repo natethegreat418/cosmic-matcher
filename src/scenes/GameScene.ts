@@ -115,18 +115,6 @@ export class GameScene extends Phaser.Scene {
           fontFamily: 'Arial, sans-serif'
         }
       );
-    } else {
-      // First round instructions
-      this.add.text(
-        uiX,
-        currentY,
-        isMobile ? 'Match 3+ aliens!' : 'Score as much as you can in 60 seconds!',
-        {
-          fontSize: fontSize.subtitle,
-          color: '#cccccc',
-          fontFamily: 'Arial, sans-serif'
-        }
-      );
     }
 
     // Initialize game state (creates UI)

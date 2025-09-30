@@ -29,6 +29,21 @@ export class UpgradeManager {
   }
 
   /**
+   * Get timer slowdown from time dilation upgrades
+   * Returns the amount to subtract from the default 1 second per tick
+   */
+  public getTimerSlowdown(): number {
+    const shopSystem = ShopSystem.getInstance();
+
+    // Count how many time_dilation upgrades the player has for this round
+    const dilationCount = shopSystem.getItemPurchaseCount('time_dilation');
+
+    // Each time_dilation upgrade slows the timer by 0.5 seconds per tick
+    // So instead of -1s per tick, it becomes -(1 - 0.5*count) per tick
+    return dilationCount * 0.5;
+  }
+
+  /**
    * Apply score multiplier upgrades to base score
    * (Future enhancement - not implemented in Phase 2)
    */
