@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { GameProgressManager } from './GameProgressManager';
 import { UpgradeManager } from './UpgradeManager';
 import { ShopSystem } from './ShopSystem';
+import { GAME_CONFIG } from '../types';
 
 /**
  * Manages the game state including score, timer, combos, and UI updates
@@ -56,71 +57,164 @@ export class GameState {
    * Initializes all UI elements for displaying game state
    */
   private initializeUI(): void {
-    // Position UI elements on the right side with proper spacing
-    const uiX = 680;  // Further right to avoid overlap
+    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const screenWidth = this.scene.scale.width;
+    const screenHeight = this.scene.scale.height;
 
-    // Score display
-    this.scoreText = this.scene.add.text(
-      uiX,
-      120,
-      'Score: 0',
-      {
-        fontSize: '24px',
-        color: '#ffffff',
-        fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
-      }
-    );
+    // Position UI elements responsively
+    // On mobile: below the grid, on desktop: right side
+    let timerX: number;
+    let scoreX: number;
+    let uiY: number;
 
-    // Timer display
-    this.timerText = this.scene.add.text(
-      uiX,
-      160,
-      this.formatTime(this.timeRemaining),
-      {
-        fontSize: '22px',
-        color: '#F59E0B', // Solar Gold color
-        fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
-      }
-    );
+    if (isMobile) {
+      // Calculate position below the 8x8 grid
+      const gridHeight = (GAME_CONFIG.TILE_SIZE + GAME_CONFIG.TILE_SPACING) * GAME_CONFIG.GRID_HEIGHT;
+      uiY = GAME_CONFIG.BOARD_OFFSET_Y + gridHeight + 15;
 
-    // Add clock emoji for visual appeal
-    this.scene.add.text(
-      uiX - 30,
-      160,
-      '⏱',
-      {
-        fontSize: '22px',
-        fontFamily: 'Arial, sans-serif'
-      }
-    );
+      // Timer left-aligned, Score right-aligned
+      timerX = GAME_CONFIG.BOARD_OFFSET_X;
+      const gridWidth = (GAME_CONFIG.TILE_SIZE + GAME_CONFIG.TILE_SPACING) * GAME_CONFIG.GRID_WIDTH;
+      scoreX = GAME_CONFIG.BOARD_OFFSET_X + gridWidth;
+    } else {
+      timerX = 680;
+      scoreX = 680;
+      uiY = 120;
+    }
 
-    // Combo indicator (hidden initially)
-    this.comboText = this.scene.add.text(
-      uiX,
-      200,
-      '',
-      {
-        fontSize: '18px',
-        color: '#00F5FF', // Bright cyan for combos
-        fontFamily: 'Arial, sans-serif',
-        fontStyle: 'italic'
-      }
-    );
+    // Responsive font sizes (larger on mobile now that they're below grid)
+    const fontSize = {
+      score: isMobile ? '22px' : '24px',
+      timer: isMobile ? '20px' : '22px',
+      combo: isMobile ? '16px' : '18px',
+      gameOver: isMobile ? '32px' : '48px'
+    };
+
+    if (isMobile) {
+      // Mobile layout: Timer left, Score right on same row
+
+      // Timer display with clock emoji (left aligned)
+      this.scene.add.text(
+        timerX,
+        uiY,
+        '⏱',
+        {
+          fontSize: fontSize.timer,
+          fontFamily: 'Arial, sans-serif'
+        }
+      );
+
+      this.timerText = this.scene.add.text(
+        timerX + 22,
+        uiY,
+        this.formatTime(this.timeRemaining),
+        {
+          fontSize: fontSize.timer,
+          color: '#F59E0B', // Solar Gold color
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'bold'
+        }
+      );
+
+      // Score display (right aligned)
+      this.scoreText = this.scene.add.text(
+        scoreX,
+        uiY,
+        'Score: 0',
+        {
+          fontSize: fontSize.score,
+          color: '#ffffff',
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'bold'
+        }
+      );
+      this.scoreText.setOrigin(1, 0); // Right-align the text
+
+      uiY += parseInt(fontSize.timer) + 8;
+
+      // Combo indicator (hidden initially) - centered below
+      const centerX = GAME_CONFIG.BOARD_OFFSET_X + ((GAME_CONFIG.TILE_SIZE + GAME_CONFIG.TILE_SPACING) * GAME_CONFIG.GRID_WIDTH) / 2;
+      this.comboText = this.scene.add.text(
+        centerX,
+        uiY,
+        '',
+        {
+          fontSize: fontSize.combo,
+          color: '#00F5FF', // Bright cyan for combos
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'italic'
+        }
+      );
+      this.comboText.setOrigin(0.5, 0); // Center the text
+    } else {
+      // Desktop layout: Score above Timer
+
+      // Score display
+      this.scoreText = this.scene.add.text(
+        scoreX,
+        uiY,
+        'Score: 0',
+        {
+          fontSize: fontSize.score,
+          color: '#ffffff',
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'bold'
+        }
+      );
+
+      uiY += parseInt(fontSize.score) + 10;
+
+      // Timer display with clock emoji
+      this.scene.add.text(
+        timerX - 30,
+        uiY,
+        '⏱',
+        {
+          fontSize: fontSize.timer,
+          fontFamily: 'Arial, sans-serif'
+        }
+      );
+
+      this.timerText = this.scene.add.text(
+        timerX,
+        uiY,
+        this.formatTime(this.timeRemaining),
+        {
+          fontSize: fontSize.timer,
+          color: '#F59E0B', // Solar Gold color
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'bold'
+        }
+      );
+
+      uiY += parseInt(fontSize.timer) + 10;
+
+      // Combo indicator (hidden initially)
+      this.comboText = this.scene.add.text(
+        timerX,
+        uiY,
+        '',
+        {
+          fontSize: fontSize.combo,
+          color: '#00F5FF', // Bright cyan for combos
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'italic'
+        }
+      );
+    }
 
     // Game over text (hidden initially) - centered on screen
     this.gameOverText = this.scene.add.text(
-      450,  // Center of 900px width
-      350,
+      screenWidth / 2,
+      screenHeight / 2,
       '',
       {
-        fontSize: '48px',
+        fontSize: fontSize.gameOver,
         color: '#EC4899', // Plasma Pink for emphasis
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: 4,
+        strokeThickness: isMobile ? 2 : 4,
         align: 'center'
       }
     );
@@ -331,13 +425,28 @@ export class GameState {
     this.timeRemaining += seconds;
     this.updateTimerDisplay();
 
+    const isMobile = GAME_CONFIG.IS_MOBILE;
+
+    // Position relative to timer
+    let bonusX: number;
+    let bonusY: number;
+
+    if (isMobile) {
+      const gridHeight = (GAME_CONFIG.TILE_SIZE + GAME_CONFIG.TILE_SPACING) * GAME_CONFIG.GRID_HEIGHT;
+      bonusY = GAME_CONFIG.BOARD_OFFSET_Y + gridHeight + 85; // Below timer
+      bonusX = GAME_CONFIG.BOARD_OFFSET_X;
+    } else {
+      bonusX = 680;
+      bonusY = 240;
+    }
+
     // Show bonus animation
     const bonusText = this.scene.add.text(
-      680,  // Match the uiX position
-      240,  // Below combo text
+      bonusX,
+      bonusY,
       `+${seconds}s TIME!`,
       {
-        fontSize: '20px',
+        fontSize: isMobile ? '18px' : '20px',
         color: '#00F5FF',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'

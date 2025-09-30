@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { GameProgressManager } from '../game/GameProgressManager';
 import { ShopSystem } from '../game/ShopSystem';
+import { GAME_CONFIG } from '../types';
 import type { ShopItem } from '../types/Progress';
 
 export class ShopScene extends Phaser.Scene {
@@ -18,22 +19,36 @@ export class ShopScene extends Phaser.Scene {
     this.progressManager = GameProgressManager.getInstance();
 
     const centerX = this.cameras.main.width / 2;
+    const isMobile = GAME_CONFIG.IS_MOBILE;
 
     // Background
     this.cameras.main.setBackgroundColor('#2a2a2a');
 
+    // Responsive font sizes
+    const fontSize = {
+      header: isMobile ? '28px' : '42px',
+      score: isMobile ? '20px' : '28px',
+      instructions: isMobile ? '13px' : '16px',
+      warning: isMobile ? '12px' : '14px',
+      message: isMobile ? '14px' : '18px',
+      button: isMobile ? '18px' : '24px',
+      hint: isMobile ? '11px' : '14px'
+    };
+
+    let currentY = isMobile ? 30 : 80;
+
     // Shop header
     const headerText = this.add.text(
       centerX,
-      80,
+      currentY,
       '⭐ COSMIC SHOP ⭐',
       {
-        fontSize: '42px',
+        fontSize: fontSize.header,
         color: '#F59E0B', // Solar gold
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: 3
+        strokeThickness: isMobile ? 2 : 3
       }
     );
     headerText.setOrigin(0.5, 0.5);
@@ -46,13 +61,15 @@ export class ShopScene extends Phaser.Scene {
       ease: 'Back.easeOut'
     });
 
+    currentY += isMobile ? 40 : 60;
+
     // Current score display
     this.pointsText = this.add.text(
       centerX,
-      140,
+      currentY,
       `Total Score: ${this.progressManager.getTotalScore().toLocaleString()}`,
       {
-        fontSize: '28px',
+        fontSize: fontSize.score,
         color: '#F59E0B',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -60,41 +77,55 @@ export class ShopScene extends Phaser.Scene {
     );
     this.pointsText.setOrigin(0.5, 0.5);
 
+    currentY += isMobile ? 30 : 40;
+
     // Instructions
-    this.add.text(
+    const instructionText = this.add.text(
       centerX,
-      180,
-      'Spend your score for upgrades that help in future rounds',
+      currentY,
+      isMobile ? 'Spend your score for upgrades' : 'Spend your score for upgrades that help in future rounds',
       {
-        fontSize: '16px',
+        fontSize: fontSize.instructions,
         color: '#cccccc',
         fontFamily: 'Arial, sans-serif'
       }
-    ).setOrigin(0.5, 0.5);
+    );
+    instructionText.setOrigin(0.5, 0.5);
+
+    currentY += isMobile ? 18 : 20;
 
     // Warning about spending
-    this.add.text(
+    const warningText = this.add.text(
       centerX,
-      200,
-      'Each purchase permanently reduces your total score!',
+      currentY,
+      isMobile ? 'Purchases reduce your total score!' : 'Each purchase permanently reduces your total score!',
       {
-        fontSize: '14px',
+        fontSize: fontSize.warning,
         color: '#FF6B6B',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'italic'
       }
-    ).setOrigin(0.5, 0.5);
+    );
+    warningText.setOrigin(0.5, 0.5);
+
+    currentY += isMobile ? 35 : 60;
 
     // Display shop items
-    this.displayShopItems(centerX, 260);
+    const itemsStartY = currentY;
+    this.displayShopItems(centerX, itemsStartY);
+
+    // Calculate position for message based on number of items
+    const availableItems = this.shopSystem.getAvailableItems();
+    const itemHeight = isMobile ? 65 : 80;
+    currentY = itemsStartY + (availableItems.length > 0 ? availableItems.length * itemHeight + 20 : 70);
 
     // Message area for feedback
     this.messageText = this.add.text(
       centerX,
-      420,
+      currentY,
       '',
       {
-        fontSize: '18px',
+        fontSize: fontSize.message,
         color: '#00F5FF',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'italic'
@@ -102,29 +133,15 @@ export class ShopScene extends Phaser.Scene {
     );
     this.messageText.setOrigin(0.5, 0.5);
 
+    currentY += isMobile ? 40 : 100;
+
     // Continue button
-    this.createContinueButton(centerX, 520);
-
-    // Skip shop hint
-    this.add.text(
-      centerX,
-      600,
-      'Press SPACE to continue without purchasing',
-      {
-        fontSize: '14px',
-        color: '#888888',
-        fontFamily: 'Arial, sans-serif'
-      }
-    ).setOrigin(0.5, 0.5);
-
-    // Add keyboard shortcut
-    this.input.keyboard?.once('keydown-SPACE', () => {
-      this.startNextRound();
-    });
+    this.createContinueButton(centerX, currentY);
   }
 
   private displayShopItems(centerX: number, startY: number): void {
     const availableItems = this.shopSystem.getAvailableItems();
+    const isMobile = GAME_CONFIG.IS_MOBILE;
 
     if (availableItems.length === 0) {
       this.add.text(
@@ -132,7 +149,7 @@ export class ShopScene extends Phaser.Scene {
         startY + 50,
         'No items available for purchase',
         {
-          fontSize: '20px',
+          fontSize: isMobile ? '16px' : '20px',
           color: '#888888',
           fontFamily: 'Arial, sans-serif',
           fontStyle: 'italic'
@@ -141,8 +158,9 @@ export class ShopScene extends Phaser.Scene {
       return;
     }
 
+    const itemHeight = isMobile ? 65 : 80;
     availableItems.forEach((item, index) => {
-      this.createShopItemUI(item, centerX, startY + (index * 80));
+      this.createShopItemUI(item, centerX, startY + (index * itemHeight));
     });
   }
 
@@ -150,48 +168,67 @@ export class ShopScene extends Phaser.Scene {
     const currentCost = this.shopSystem.getItemCost(item.id);
     const canAfford = this.progressManager.canAfford(currentCost);
     const purchaseCount = this.shopSystem.getItemPurchaseCount(item.id);
+    const isMobile = GAME_CONFIG.IS_MOBILE;
+
+    // Responsive sizing
+    const itemWidth = isMobile ? Math.min(this.cameras.main.width - 20, 380) : 600;
+    const itemHeight = isMobile ? 60 : 70;
+    const fontSize = {
+      name: isMobile ? '14px' : '20px',
+      description: isMobile ? '11px' : '14px',
+      cost: isMobile ? '14px' : '20px',
+      button: isMobile ? '13px' : '16px'
+    };
 
     // Item background
-    const itemBg = this.add.rectangle(centerX, y, 600, 70, 0x333333);
+    const itemBg = this.add.rectangle(centerX, y, itemWidth, itemHeight, 0x333333);
     itemBg.setStrokeStyle(2, canAfford ? 0x00F5FF : 0x666666);
 
     // Item name and owned count
     let nameText = item.name;
     if (purchaseCount > 0) {
-      nameText += ` (Owned: ${purchaseCount})`;
+      nameText += ` (${purchaseCount})`;
     }
 
+    const leftMargin = isMobile ? -itemWidth / 2 + 10 : -280;
+    const nameYOffset = isMobile ? -15 : -15;
+
     this.add.text(
-      centerX - 280,
-      y - 15,
+      centerX + leftMargin,
+      y + nameYOffset,
       nameText,
       {
-        fontSize: '20px',
+        fontSize: fontSize.name,
         color: canAfford ? '#ffffff' : '#888888',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
       }
     ).setOrigin(0, 0.5);
 
-    // Item description
+    // Item description (shorter on mobile)
+    const descriptionYOffset = isMobile ? 8 : 10;
+    const maxDescriptionWidth = isMobile ? itemWidth - 120 : 500;
+
     this.add.text(
-      centerX - 280,
-      y + 10,
+      centerX + leftMargin,
+      y + descriptionYOffset,
       item.description,
       {
-        fontSize: '14px',
+        fontSize: fontSize.description,
         color: canAfford ? '#cccccc' : '#666666',
-        fontFamily: 'Arial, sans-serif'
+        fontFamily: 'Arial, sans-serif',
+        wordWrap: { width: maxDescriptionWidth }
       }
     ).setOrigin(0, 0.5);
 
     // Cost display
+    const costXOffset = isMobile ? itemWidth / 2 - 80 : 150;
     const costText = this.add.text(
-      centerX + 150,
+      centerX + costXOffset,
       y - 10,
       `-${currentCost}`,
       {
-        fontSize: '20px',
+        fontSize: fontSize.cost,
         color: canAfford ? '#FF6B6B' : '#888888',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -201,13 +238,17 @@ export class ShopScene extends Phaser.Scene {
 
     // Purchase button
     const btnColor = canAfford ? 0x00F5FF : 0x666666;
-    const purchaseBtn = this.add.rectangle(centerX + 220, y, 100, 40, btnColor);
+    const btnWidth = isMobile ? 60 : 100;
+    const btnHeight = isMobile ? 35 : 40;
+    const btnXOffset = isMobile ? itemWidth / 2 - 35 : 220;
+
+    const purchaseBtn = this.add.rectangle(centerX + btnXOffset, y, btnWidth, btnHeight, btnColor);
     const btnText = this.add.text(
-      centerX + 220,
+      centerX + btnXOffset,
       y,
       'BUY',
       {
-        fontSize: '16px',
+        fontSize: fontSize.button,
         color: '#000000',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -278,7 +319,12 @@ export class ShopScene extends Phaser.Scene {
   }
 
   private createContinueButton(centerX: number, y: number): void {
-    const continueBtn = this.add.rectangle(centerX, y, 250, 60, 0x00F5FF);
+    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const btnWidth = isMobile ? 200 : 250;
+    const btnHeight = isMobile ? 50 : 60;
+    const btnFontSize = isMobile ? '18px' : '24px';
+
+    const continueBtn = this.add.rectangle(centerX, y, btnWidth, btnHeight, 0x00F5FF);
     continueBtn.setInteractive({ useHandCursor: true });
 
     const btnText = this.add.text(
@@ -286,7 +332,7 @@ export class ShopScene extends Phaser.Scene {
       y,
       'Start Next Round',
       {
-        fontSize: '24px',
+        fontSize: btnFontSize,
         color: '#000000',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'

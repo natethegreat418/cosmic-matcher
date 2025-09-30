@@ -15,13 +15,14 @@ export class GameScene extends Phaser.Scene {
   preload(): void {
     this.cameras.main.setBackgroundColor('#2a2a2a');
 
-    // Load alien SVG sprites
-    this.load.svg('deepSpaceBlue', '/aliens/deepSpaceBlue.svg', { width: 60, height: 60 });
-    this.load.svg('nebulaPurple', '/aliens/nebulaPurple.svg', { width: 60, height: 60 });
-    this.load.svg('cosmicTeal', '/aliens/cosmicTeal.svg', { width: 60, height: 60 });
-    this.load.svg('solarGold', '/aliens/solarGold.svg', { width: 60, height: 60 });
-    this.load.svg('meteorSilver', '/aliens/meteorSilver.svg', { width: 60, height: 60 });
-    this.load.svg('plasmaPink', '/aliens/plasmaPink.svg', { width: 60, height: 60 });
+    // Load alien SVG sprites with responsive size
+    const tileSize = GAME_CONFIG.TILE_SIZE;
+    this.load.svg('deepSpaceBlue', '/aliens/deepSpaceBlue.svg', { width: tileSize, height: tileSize });
+    this.load.svg('nebulaPurple', '/aliens/nebulaPurple.svg', { width: tileSize, height: tileSize });
+    this.load.svg('cosmicTeal', '/aliens/cosmicTeal.svg', { width: tileSize, height: tileSize });
+    this.load.svg('solarGold', '/aliens/solarGold.svg', { width: tileSize, height: tileSize });
+    this.load.svg('meteorSilver', '/aliens/meteorSilver.svg', { width: tileSize, height: tileSize });
+    this.load.svg('plasmaPink', '/aliens/plasmaPink.svg', { width: tileSize, height: tileSize });
 
     // Load ship SVGs for round indicator
     this.load.svg('ship-normal', '/ships/normal.svg', { width: 70, height: 70 });
@@ -50,13 +51,24 @@ export class GameScene extends Phaser.Scene {
       shipType = 'ship-ludicrous';
     }
 
+    // Responsive font sizes and positioning
+    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const fontSize = {
+      title: isMobile ? '24px' : '28px',
+      subtitle: isMobile ? '16px' : '18px',
+      speed: isMobile ? '16px' : '20px'
+    };
+
+    const uiX = GAME_CONFIG.BOARD_OFFSET_X;
+    let currentY = isMobile ? 10 : 30;
+
     // Round indicator
     const roundText = this.add.text(
-      GAME_CONFIG.BOARD_OFFSET_X,
-      30,
+      uiX,
+      currentY,
       `Round ${currentRound} / 10`,
       {
-        fontSize: '28px',
+        fontSize: fontSize.title,
         color: '#00F5FF',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -64,35 +76,41 @@ export class GameScene extends Phaser.Scene {
     );
 
     // Calculate position after the text, centered vertically with the text
-    const iconX = GAME_CONFIG.BOARD_OFFSET_X + roundText.width + 30;
-    const iconY = roundText.y + (roundText.height / 2); // Center align with the middle of the text
+    const iconX = uiX + roundText.width + (isMobile ? 10 : 30);
+    const iconY = roundText.y + (roundText.height / 2);
 
-    // Add ship icon after the text
-    this.add.image(iconX, iconY, shipType);
+    // Add ship icon after the text (scaled for mobile)
+    const shipIcon = this.add.image(iconX, iconY, shipType);
+    if (isMobile) {
+      shipIcon.setScale(0.57); // Scale down from 70 to ~40
+    }
+
+    currentY += roundText.height + (isMobile ? 3 : 10);
 
     // Speed warning for higher rounds
     if (speedMultiplier > 1) {
       this.add.text(
-        GAME_CONFIG.BOARD_OFFSET_X + 180,
-        35,
+        uiX,
+        currentY,
         `(${speedMultiplier}x Speed!)`,
         {
-          fontSize: '20px',
+          fontSize: fontSize.speed,
           color: speedMultiplier > 2 ? '#EC4899' : '#F59E0B',
           fontFamily: 'Arial, sans-serif',
           fontStyle: 'italic'
         }
       );
+      currentY += parseInt(fontSize.speed) + (isMobile ? 3 : 5);
     }
 
     // Total score display (if not first round)
     if (currentRound > 1) {
       this.add.text(
-        GAME_CONFIG.BOARD_OFFSET_X,
-        60,
+        uiX,
+        currentY,
         `Total Score: ${totalScore.toLocaleString()}`,
         {
-          fontSize: '18px',
+          fontSize: fontSize.subtitle,
           color: '#F59E0B',
           fontFamily: 'Arial, sans-serif'
         }
@@ -100,27 +118,16 @@ export class GameScene extends Phaser.Scene {
     } else {
       // First round instructions
       this.add.text(
-        GAME_CONFIG.BOARD_OFFSET_X,
-        60,
-        'Score as much as you can in 60 seconds!',
+        uiX,
+        currentY,
+        isMobile ? 'Match 3+ aliens!' : 'Score as much as you can in 60 seconds!',
         {
-          fontSize: '16px',
+          fontSize: fontSize.subtitle,
           color: '#cccccc',
           fontFamily: 'Arial, sans-serif'
         }
       );
     }
-
-    this.add.text(
-      GAME_CONFIG.BOARD_OFFSET_X,
-      80,
-      'Big combos (5+) give bonus time!',
-      {
-        fontSize: '14px',
-        color: '#00F5FF',
-        fontFamily: 'Arial, sans-serif'
-      }
-    );
 
     // Initialize game state (creates UI)
     this._gameState = new GameState(this);

@@ -12,6 +12,9 @@ export class Grid {
   private selectedTile: Tile | null = null;
   private isSwapping: boolean = false; // Prevents clicking during animations
   private gameState: GameState;
+  private swipeStartTile: Tile | null = null;
+  private swipeStartX: number = 0;
+  private swipeStartY: number = 0;
 
   constructor(width: number, height: number, scene: Phaser.Scene, gameState: GameState) {
     this.gridWidth = width;
@@ -25,6 +28,7 @@ export class Grid {
 
     this.initializeGrid();
     this.setupClickHandlers();
+    this.setupSwipeHandlers();
   }
 
   /**
@@ -88,6 +92,73 @@ export class Grid {
         this.handleTileClick(tile);
       }
     });
+  }
+
+  /**
+   * Sets up swipe gesture handlers for mobile touch controls
+   */
+  private setupSwipeHandlers(): void {
+    // Handle touch start
+    this.scene.input.on('gameobjectdown', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Rectangle) => {
+      const tile = gameObject.getData('tile') as Tile;
+      if (tile && !this.isSwapping && !this.gameState.getIsGameOver()) {
+        this.swipeStartTile = tile;
+        this.swipeStartX = pointer.x;
+        this.swipeStartY = pointer.y;
+      }
+    });
+
+    // Handle touch end (swipe)
+    this.scene.input.on('gameobjectup', (pointer: Phaser.Input.Pointer, _gameObject: Phaser.GameObjects.Rectangle) => {
+      if (this.swipeStartTile && !this.isSwapping && !this.gameState.getIsGameOver()) {
+        const deltaX = pointer.x - this.swipeStartX;
+        const deltaY = pointer.y - this.swipeStartY;
+        const minSwipeDistance = 30; // Minimum pixels for a swipe
+
+        // Check if movement is significant enough to be a swipe
+        if (Math.abs(deltaX) > minSwipeDistance || Math.abs(deltaY) > minSwipeDistance) {
+          this.handleSwipe(this.swipeStartTile, deltaX, deltaY);
+        }
+
+        // Reset swipe tracking
+        this.swipeStartTile = null;
+      }
+    });
+  }
+
+  /**
+   * Handles swipe gesture to swap tiles in the direction of the swipe
+   */
+  private async handleSwipe(tile: Tile, deltaX: number, deltaY: number): Promise<void> {
+    const startPos = this.getTilePosition(tile);
+    if (!startPos) return;
+
+    // Determine swipe direction (prioritize larger delta)
+    let targetPos: TilePosition | null = null;
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      // Horizontal swipe
+      if (deltaX > 0) {
+        // Swipe right
+        targetPos = { row: startPos.row, col: startPos.col + 1 };
+      } else {
+        // Swipe left
+        targetPos = { row: startPos.row, col: startPos.col - 1 };
+      }
+    } else {
+      // Vertical swipe
+      if (deltaY > 0) {
+        // Swipe down
+        targetPos = { row: startPos.row + 1, col: startPos.col };
+      } else {
+        // Swipe up
+        targetPos = { row: startPos.row - 1, col: startPos.col };
+      }
+    }
+
+    // Validate target position and attempt swap
+    if (targetPos && this.isValidPosition(targetPos.row, targetPos.col)) {
+      await this.attemptSwap(startPos, targetPos);
+    }
   }
 
   /**
