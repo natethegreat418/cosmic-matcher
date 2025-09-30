@@ -13,6 +13,14 @@ export class RoundTransitionScene extends Phaser.Scene {
     this.roundResult = data.roundResult;
   }
 
+  preload(): void {
+    // Load ship SVGs for progress indicator
+    this.load.svg('ship-normal', '/ships/normal.svg', { width: 60, height: 60 });
+    this.load.svg('ship-medium', '/ships/medium.svg', { width: 60, height: 60 });
+    this.load.svg('ship-fast', '/ships/fast.svg', { width: 60, height: 60 });
+    this.load.svg('ship-ludicrous', '/ships/ludicrous.svg', { width: 60, height: 60 });
+  }
+
   create(): void {
     const centerX = this.cameras.main.width / 2;
     const progressManager = GameProgressManager.getInstance();
@@ -159,48 +167,64 @@ export class RoundTransitionScene extends Phaser.Scene {
 
   private createProgressIndicator(centerX: number, y: number): void {
     const currentRound = this.roundResult!.roundNumber;
-    const dotSpacing = 50;
-    const startX = centerX - (9 * dotSpacing) / 2;
+    const shipSpacing = 85;
+    const startX = centerX - (9 * shipSpacing) / 2;
 
-    // Create dots for rounds 1-10
+    // Create ships for rounds 1-10
     for (let i = 1; i <= 10; i++) {
-      const x = startX + (i - 1) * dotSpacing;
+      const x = startX + (i - 1) * shipSpacing;
 
-      let color: number;
-      if (i < currentRound) {
-        color = 0x00F5FF; // Completed - bright cyan
-      } else if (i === currentRound) {
-        color = 0xF59E0B; // Just completed - solar gold
+      // Determine ship type based on round speed
+      let shipType: string;
+      if (i <= 2) {
+        shipType = 'ship-normal'; // Rounds 1-2: 1x speed
+      } else if (i <= 4) {
+        shipType = 'ship-medium'; // Rounds 3-4: 1.5x speed
+      } else if (i <= 6) {
+        shipType = 'ship-fast'; // Rounds 5-6: 2x speed
+      } else if (i <= 8) {
+        shipType = 'ship-fast'; // Rounds 7-8: 2.5x speed (using fast ship)
       } else {
-        color = 0x444444; // Not reached - dark gray
+        shipType = 'ship-ludicrous'; // Rounds 9-10: 3x speed
       }
 
-      const dot = this.add.circle(x, y, 15, color);
+      // Create ship sprite
+      const ship = this.add.image(x, y, shipType);
 
-      // Add round number
-      this.add.text(
-        x,
-        y,
-        i.toString(),
-        {
-          fontSize: '12px',
-          color: i <= currentRound ? '#000000' : '#888888',
-          fontFamily: 'Arial, sans-serif',
-          fontStyle: 'bold'
-        }
-      ).setOrigin(0.5, 0.5);
+      // Apply tint based on completion status
+      if (i < currentRound) {
+        ship.setTint(0xFFFFFF); // Completed - white glow (no animation)
+      } else if (i === currentRound + 1 && currentRound < 10) {
+        ship.setTint(0xFFFFFF); // Next round - white glow with animation
 
-      // Animate current round dot
-      if (i === currentRound) {
+        // Animate next round ship (the one you're entering)
         this.tweens.add({
-          targets: dot,
-          scale: { from: 1, to: 1.2 },
+          targets: ship,
+          scale: { from: 1, to: 1.3 },
           duration: 500,
           ease: 'Power2',
           yoyo: true,
           repeat: -1
         });
+      } else if (i === currentRound) {
+        ship.setTint(0xFFFFFF); // Just completed - white glow (no animation)
+      } else {
+        ship.setTint(0x666666); // Not reached - medium gray
+        ship.setAlpha(0.5);
       }
+
+      // Add small round number below ship
+      this.add.text(
+        x,
+        y + 45,
+        i.toString(),
+        {
+          fontSize: '14px',
+          color: i <= currentRound ? '#00F5FF' : '#666666',
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'bold'
+        }
+      ).setOrigin(0.5, 0.5);
     }
   }
 

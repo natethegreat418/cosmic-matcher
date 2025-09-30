@@ -6,6 +6,14 @@ export class GameOverScene extends Phaser.Scene {
     super({ key: 'GameOverScene' });
   }
 
+  preload(): void {
+    // Load ship SVGs for speed indicators
+    this.load.svg('ship-normal', '/ships/normal.svg', { width: 20, height: 20 });
+    this.load.svg('ship-medium', '/ships/medium.svg', { width: 20, height: 20 });
+    this.load.svg('ship-fast', '/ships/fast.svg', { width: 20, height: 20 });
+    this.load.svg('ship-ludicrous', '/ships/ludicrous.svg', { width: 20, height: 20 });
+  }
+
   create(): void {
     const centerX = this.cameras.main.width / 2;
     const progressManager = GameProgressManager.getInstance();
