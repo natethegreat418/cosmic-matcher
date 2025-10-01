@@ -3,7 +3,8 @@ import { Tile } from './Tile';
 import { MatchDetector } from './MatchDetector';
 import { GameState } from './GameState';
 import { InputManager } from './InputManager';
-import { type TileColor, type TilePosition, GAME_CONFIG } from '../types';
+import type { TileColor, TilePosition, MatchGroup } from '../types';
+import { GAME_CONFIG } from '../types';
 
 export class Grid {
   public tiles: (Tile | null)[][];
@@ -400,12 +401,12 @@ export class Grid {
    * Removes matched tiles with satisfying animations
    * @param matches - Array of match groups to remove
    */
-  private async removeMatches(matches: TilePosition[][]): Promise<void> {
+  private async removeMatches(matches: MatchGroup[]): Promise<void> {
     const tilesToRemove: Tile[] = [];
 
     // Collect all tiles that need to be removed
     matches.forEach(matchGroup => {
-      matchGroup.forEach(pos => {
+      matchGroup.tiles.forEach(pos => {
         const tile = this.tiles[pos.row][pos.col];
         if (tile) {
           tilesToRemove.push(tile);
@@ -419,7 +420,7 @@ export class Grid {
 
     // Remove tiles from the grid data structure
     matches.forEach(matchGroup => {
-      matchGroup.forEach(pos => {
+      matchGroup.tiles.forEach(pos => {
         const tile = this.tiles[pos.row][pos.col];
         if (tile) {
           tile.destroy();

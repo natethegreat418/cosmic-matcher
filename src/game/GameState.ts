@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { GameProgressManager } from './GameProgressManager';
 import { UpgradeManager } from './UpgradeManager';
 import { ShopSystem } from './ShopSystem';
-import { GAME_CONFIG } from '../types';
+import { GAME_CONFIG, type MatchGroup } from '../types';
 
 /**
  * Manages the game state including score, timer, combos, and UI updates
@@ -310,7 +310,7 @@ export class GameState {
    * @param matchGroups - Array of match groups from the detector
    * @param cascadeNumber - Which cascade this is (for multiplier)
    */
-  public addMatchScore(matchGroups: any[][], cascadeNumber: number): void {
+  public addMatchScore(matchGroups: MatchGroup[], cascadeNumber: number): void {
     let matchScore = 0;
 
     // Calculate base score for all matched tiles
@@ -323,7 +323,7 @@ export class GameState {
       // Bonus for long matches (4+ tiles)
       if (tileCount >= 4) {
         matchScore += this.LONG_MATCH_BONUS * (tileCount - 3);
-        console.log(`Long match bonus! ${tileCount} tiles in a row!`);
+        console.log(`Long match bonus! ${tileCount} tiles (${group.direction}) in a row!`);
       }
     });
 

@@ -1,6 +1,6 @@
 import { Tile } from './Tile';
 import { UpgradeManager } from './UpgradeManager';
-import { type TilePosition } from '../types';
+import type { TilePosition, MatchGroup, TileColor } from '../types';
 
 /**
  * Utility class for detecting matches in the grid
@@ -10,17 +10,17 @@ export class MatchDetector {
   /**
    * Finds all matches in the current grid state
    * @param tiles - 2D array representing the current grid
-   * @returns Array of match groups, where each group is an array of tile positions
+   * @returns Array of match groups with full type information
    */
-  public static findMatches(tiles: (Tile | null)[][]): TilePosition[][] {
-    const matches: TilePosition[][] = [];
+  public static findMatches(tiles: (Tile | null)[][]): MatchGroup[] {
+    const matches: MatchGroup[] = [];
     const gridHeight = tiles.length;
     const gridWidth = tiles[0]?.length || 0;
 
     // Check horizontal matches (rows)
     for (let row = 0; row < gridHeight; row++) {
       let currentMatch: TilePosition[] = [];
-      let currentColor: string | null = null;
+      let currentColor: TileColor | null = null;
 
       for (let col = 0; col < gridWidth; col++) {
         const tile = tiles[row][col];
@@ -30,8 +30,13 @@ export class MatchDetector {
           currentMatch.push({ row, col });
         } else {
           // Check if previous match was valid (3+ tiles)
-          if (currentMatch.length >= 3) {
-            matches.push([...currentMatch]);
+          if (currentMatch.length >= 3 && currentColor) {
+            matches.push({
+              tiles: [...currentMatch],
+              color: currentColor,
+              direction: 'horizontal',
+              length: currentMatch.length
+            });
           }
 
           // Start new potential match
@@ -46,15 +51,20 @@ export class MatchDetector {
       }
 
       // Check final match in row
-      if (currentMatch.length >= 3) {
-        matches.push([...currentMatch]);
+      if (currentMatch.length >= 3 && currentColor) {
+        matches.push({
+          tiles: [...currentMatch],
+          color: currentColor,
+          direction: 'horizontal',
+          length: currentMatch.length
+        });
       }
     }
 
     // Check vertical matches (columns)
     for (let col = 0; col < gridWidth; col++) {
       let currentMatch: TilePosition[] = [];
-      let currentColor: string | null = null;
+      let currentColor: TileColor | null = null;
 
       for (let row = 0; row < gridHeight; row++) {
         const tile = tiles[row][col];
@@ -64,8 +74,13 @@ export class MatchDetector {
           currentMatch.push({ row, col });
         } else {
           // Check if previous match was valid (3+ tiles)
-          if (currentMatch.length >= 3) {
-            matches.push([...currentMatch]);
+          if (currentMatch.length >= 3 && currentColor) {
+            matches.push({
+              tiles: [...currentMatch],
+              color: currentColor,
+              direction: 'vertical',
+              length: currentMatch.length
+            });
           }
 
           // Start new potential match
@@ -80,8 +95,13 @@ export class MatchDetector {
       }
 
       // Check final match in column
-      if (currentMatch.length >= 3) {
-        matches.push([...currentMatch]);
+      if (currentMatch.length >= 3 && currentColor) {
+        matches.push({
+          tiles: [...currentMatch],
+          color: currentColor,
+          direction: 'vertical',
+          length: currentMatch.length
+        });
       }
     }
 
@@ -100,8 +120,8 @@ export class MatchDetector {
    * @param tiles - 2D array representing the current grid
    * @returns Array of diagonal match groups
    */
-  private static findDiagonalMatches(tiles: (Tile | null)[][]): TilePosition[][] {
-    const matches: TilePosition[][] = [];
+  private static findDiagonalMatches(tiles: (Tile | null)[][]): MatchGroup[] {
+    const matches: MatchGroup[] = [];
     const gridHeight = tiles.length;
     const gridWidth = tiles[0]?.length || 0;
 
@@ -109,7 +129,7 @@ export class MatchDetector {
     for (let startRow = 0; startRow < gridHeight; startRow++) {
       for (let startCol = 0; startCol < gridWidth; startCol++) {
         let currentMatch: TilePosition[] = [];
-        let currentColor: string | null = null;
+        let currentColor: TileColor | null = null;
 
         // Traverse diagonal
         let row = startRow;
@@ -120,8 +140,13 @@ export class MatchDetector {
           if (tile && tile.color === currentColor) {
             currentMatch.push({ row, col });
           } else {
-            if (currentMatch.length >= 3) {
-              matches.push([...currentMatch]);
+            if (currentMatch.length >= 3 && currentColor) {
+              matches.push({
+                tiles: [...currentMatch],
+                color: currentColor,
+                direction: 'diagonal',
+                length: currentMatch.length
+              });
             }
 
             if (tile) {
@@ -137,8 +162,13 @@ export class MatchDetector {
           col++;
         }
 
-        if (currentMatch.length >= 3) {
-          matches.push([...currentMatch]);
+        if (currentMatch.length >= 3 && currentColor) {
+          matches.push({
+            tiles: [...currentMatch],
+            color: currentColor,
+            direction: 'diagonal',
+            length: currentMatch.length
+          });
         }
       }
     }
@@ -147,7 +177,7 @@ export class MatchDetector {
     for (let startRow = 0; startRow < gridHeight; startRow++) {
       for (let startCol = gridWidth - 1; startCol >= 0; startCol--) {
         let currentMatch: TilePosition[] = [];
-        let currentColor: string | null = null;
+        let currentColor: TileColor | null = null;
 
         // Traverse diagonal
         let row = startRow;
@@ -158,8 +188,13 @@ export class MatchDetector {
           if (tile && tile.color === currentColor) {
             currentMatch.push({ row, col });
           } else {
-            if (currentMatch.length >= 3) {
-              matches.push([...currentMatch]);
+            if (currentMatch.length >= 3 && currentColor) {
+              matches.push({
+                tiles: [...currentMatch],
+                color: currentColor,
+                direction: 'diagonal',
+                length: currentMatch.length
+              });
             }
 
             if (tile) {
@@ -175,8 +210,13 @@ export class MatchDetector {
           col--;
         }
 
-        if (currentMatch.length >= 3) {
-          matches.push([...currentMatch]);
+        if (currentMatch.length >= 3 && currentColor) {
+          matches.push({
+            tiles: [...currentMatch],
+            color: currentColor,
+            direction: 'diagonal',
+            length: currentMatch.length
+          });
         }
       }
     }
