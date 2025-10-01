@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { Tile } from './Tile';
 import { MatchDetector } from './MatchDetector';
 import { GameState } from './GameState';
+import { InputManager } from './InputManager';
 import { type TileColor, type TilePosition, GAME_CONFIG } from '../types';
 
 export class Grid {
@@ -9,8 +10,7 @@ export class Grid {
   public gridWidth: number;
   public gridHeight: number;
   private scene: Phaser.Scene;
-  private selectedTile: Tile | null = null;
-  private isSwapping: boolean = false; // Prevents clicking during animations
+  private inputManager: InputManager;
   private gameState: GameState;
   private swipeStartTile: Tile | null = null;
   private swipeStartX: number = 0;
@@ -21,6 +21,7 @@ export class Grid {
     this.gridHeight = height;
     this.scene = scene;
     this.gameState = gameState;
+    this.inputManager = new InputManager(scene);
 
     this.tiles = Array.from({ length: height }, () =>
       Array.from({ length: width }, () => null)
@@ -101,7 +102,7 @@ export class Grid {
     // Handle touch start
     this.scene.input.on('gameobjectdown', (pointer: Phaser.Input.Pointer, gameObject: Phaser.GameObjects.Rectangle) => {
       const tile = gameObject.getData('tile') as Tile;
-      if (tile && !this.isSwapping && !this.gameState.getIsGameOver()) {
+      if (tile && !this.inputManager.isInputLocked() && !this.gameState.getIsGameOver()) {
         this.swipeStartTile = tile;
         this.swipeStartX = pointer.x;
         this.swipeStartY = pointer.y;
@@ -110,7 +111,7 @@ export class Grid {
 
     // Handle touch end (swipe)
     this.scene.input.on('gameobjectup', (pointer: Phaser.Input.Pointer, _gameObject: Phaser.GameObjects.Rectangle) => {
-      if (this.swipeStartTile && !this.isSwapping && !this.gameState.getIsGameOver()) {
+      if (this.swipeStartTile && !this.inputManager.isInputLocked() && !this.gameState.getIsGameOver()) {
         const deltaX = pointer.x - this.swipeStartX;
         const deltaY = pointer.y - this.swipeStartY;
         const minSwipeDistance = 30; // Minimum pixels for a swipe
@@ -130,7 +131,7 @@ export class Grid {
    * Handles swipe gesture to swap tiles in the direction of the swipe
    */
   private async handleSwipe(tile: Tile, deltaX: number, deltaY: number): Promise<void> {
-    const startPos = this.getTilePosition(tile);
+    const startPos = this.inputManager.getTilePosition(tile, this.tiles);
     if (!startPos) return;
 
     // Determine swipe direction (prioritize larger delta)
@@ -163,38 +164,33 @@ export class Grid {
 
   /**
    * Handles tile click events for selection and swapping
-   * Phase 2: Implements two-tile selection and swap validation
-   * Phase 4: Adds game over checking
+   * Now uses InputManager for cleaner state management
    */
   private async handleTileClick(tile: Tile): Promise<void> {
     // Ignore clicks during animations or if game is over
-    if (this.isSwapping || this.gameState.getIsGameOver()) {
+    if (this.inputManager.isInputLocked() || this.gameState.getIsGameOver()) {
       return;
     }
 
+    const selectedTile = this.inputManager.getSelectedTile();
+
     // If clicking the same tile, deselect it
-    if (this.selectedTile === tile) {
-      tile.unhighlight();
+    if (selectedTile === tile) {
+      this.inputManager.clearSelection();
       this.clearHints();
-      this.selectedTile = null;
       return;
     }
 
     // If no tile is selected, select this one and show possible swaps
-    if (!this.selectedTile) {
-      this.selectedTile = tile;
-      tile.setSelected();
+    if (!selectedTile) {
+      this.inputManager.setSelectedTile(tile);
       this.showValidSwapHints(tile);
       return;
     }
 
     // Two tiles are selected - attempt to swap them
-    const firstTile = this.selectedTile;
-    const secondTile = tile;
-
-    // Get positions of both tiles
-    const firstPos = this.getTilePosition(firstTile);
-    const secondPos = this.getTilePosition(secondTile);
+    const firstPos = this.inputManager.getTilePosition(selectedTile, this.tiles);
+    const secondPos = this.inputManager.getTilePosition(tile, this.tiles);
 
     if (!firstPos || !secondPos) {
       console.error('Could not find tile positions');
@@ -202,13 +198,11 @@ export class Grid {
     }
 
     // Check if tiles are adjacent
-    if (!MatchDetector.areAdjacent(firstPos, secondPos)) {
+    if (!this.inputManager.areAdjacent(firstPos, secondPos)) {
       // Not adjacent - just switch selection to the new tile
-      firstTile.unhighlight();
+      this.inputManager.setSelectedTile(tile);
       this.clearHints();
-      this.selectedTile = secondTile;
-      secondTile.setSelected();
-      this.showValidSwapHints(secondTile);
+      this.showValidSwapHints(tile);
       return;
     }
 
@@ -233,28 +227,13 @@ export class Grid {
     return row >= 0 && row < this.gridHeight && col >= 0 && col < this.gridWidth;
   }
 
-  /**
-   * Finds the grid position of a given tile
-   * @param tile - The tile to find
-   * @returns The grid position or null if not found
-   */
-  private getTilePosition(tile: Tile): TilePosition | null {
-    for (let row = 0; row < this.gridHeight; row++) {
-      for (let col = 0; col < this.gridWidth; col++) {
-        if (this.tiles[row][col] === tile) {
-          return { row, col };
-        }
-      }
-    }
-    return null;
-  }
 
   /**
    * Shows green hints on tiles that can be validly swapped with the selected tile
    * @param selectedTile - The currently selected tile
    */
   private showValidSwapHints(selectedTile: Tile): void {
-    const selectedPos = this.getTilePosition(selectedTile);
+    const selectedPos = this.inputManager.getTilePosition(selectedTile, this.tiles);
     if (!selectedPos) return;
 
     // Check all adjacent positions
@@ -294,39 +273,34 @@ export class Grid {
 
   /**
    * Attempts to swap two tiles, with validation and animation
+   * Now uses InputManager for improved visual feedback
    * @param pos1 - Position of first tile
    * @param pos2 - Position of second tile
    */
   private async attemptSwap(pos1: TilePosition, pos2: TilePosition): Promise<void> {
-    this.isSwapping = true;
+    this.inputManager.lockInput();
 
     const tile1 = this.tiles[pos1.row][pos1.col];
     const tile2 = this.tiles[pos2.row][pos2.col];
 
     if (!tile1 || !tile2) {
       console.error('Cannot swap: one or both tiles are null');
-      this.isSwapping = false;
+      this.inputManager.unlockInput();
       return;
     }
 
     // Clear selection and hints
     this.clearHints();
-    this.selectedTile = null;
+    this.inputManager.clearSelection();
 
     // Check if this swap would create a match
     const wouldCreateMatch = MatchDetector.wouldSwapCreateMatch(this.tiles, pos1, pos2);
 
     if (!wouldCreateMatch) {
-      // Invalid swap - show brief animation then revert
+      // Invalid swap - use InputManager's shake animation
       console.log('Invalid swap: no match created');
-
-      // Quick swap animation
-      await this.performSwapAnimation(tile1, tile2, pos1, pos2, true);
-
-      // Quick revert animation
-      await this.performSwapAnimation(tile1, tile2, pos2, pos1, true);
-
-      this.isSwapping = false;
+      await this.inputManager.animateInvalidSwap(tile1, tile2);
+      this.inputManager.unlockInput();
       return;
     }
 
@@ -341,7 +315,7 @@ export class Grid {
     // Phase 3: Start the match-drop-refill cycle
     await this.processMatches();
 
-    this.isSwapping = false;
+    this.inputManager.unlockInput();
   }
 
   /**
@@ -562,6 +536,10 @@ export class Grid {
   }
 
   public destroy(): void {
+    // Clean up input manager
+    this.inputManager.destroy();
+
+    // Clean up tiles
     for (let row = 0; row < this.gridHeight; row++) {
       for (let col = 0; col < this.gridWidth; col++) {
         const tile = this.tiles[row][col];
