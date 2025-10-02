@@ -1,11 +1,21 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock Tile before importing anything that depends on it
-vi.mock('./Tile', () => ({
-  Tile: class MockTile {
-    constructor(public gridX: number, public gridY: number, public color: string) {}
+vi.mock('./Tile', () => {
+  class MockTile {
+    gridX: number;
+    gridY: number;
+    color: string;
+
+    constructor(gridX: number, gridY: number, color: string) {
+      this.gridX = gridX;
+      this.gridY = gridY;
+      this.color = color;
+    }
   }
-}));
+
+  return { Tile: MockTile };
+});
 
 import { MatchDetector } from './MatchDetector';
 import { TileFactory } from '../test/helpers/TileFactory';
