@@ -18,6 +18,11 @@ Live project: https://cosmic-matcher.netlify.app/
 - `npm run build` - Type-check with TypeScript and build for production
 - `npm run preview` - Preview the production build locally
 
+### Testing
+- `npm test` - Run tests in watch mode (for development)
+- `npm run test:ui` - Open visual test UI in browser
+- `npm run test:run` - Run all tests once (for CI/verification)
+
 ## Project Structure
 ```
 src/
@@ -34,10 +39,15 @@ src/
   │   ├── GameState.ts               # Round state with timer & scoring
   │   ├── GameProgressManager.ts     # Multi-round progression & speed scaling
   │   ├── ShopSystem.ts              # Shop inventory & purchase logic
-  │   └── UpgradeManager.ts          # Upgrade effects & calculations
+  │   ├── UpgradeManager.ts          # Upgrade effects & calculations
+  │   └── InputManager.ts            # Input state & visual feedback
   ├── types/
   │   ├── index.ts                   # Core type definitions (tiles, config)
   │   └── Progress.ts                # Progress & shop type definitions
+  ├── test/
+  │   ├── setup.ts                   # Vitest configuration & mocks
+  │   └── helpers/
+  │       └── TileFactory.ts         # Test utilities for creating mock tiles
   └── assets/
       ├── aliens/                    # SVG alien sprites (6 types)
       ├── ships/                     # SVG ship icons for round indicators
@@ -355,12 +365,54 @@ GameOverScene (after Round 10)
     └── Final statistics
 ```
 
-### Code Quality
+### Code Quality Standards
 - **JSDoc Comments**: Comprehensive documentation for all public methods
 - **Meaningful Names**: Clear, descriptive variable and method names
 - **Error Handling**: Graceful handling of edge cases (invalid swaps, no matches, etc.)
 - **No Initial Matches**: Grid generation ensures playable starting state
 - **Responsive Design**: Mobile and desktop layouts calculated dynamically
+- **Type Safety**: Strong TypeScript types with strict mode enabled (no `any` types in core logic)
+- **Unit Testing**: Comprehensive test coverage for game logic using Vitest
+
+### Development Workflow (MANDATORY)
+
+**After making ANY code changes, ALWAYS execute these steps in order:**
+
+1. **Type Checking** - Verify TypeScript types are correct
+   ```bash
+   npm run build
+   ```
+   - Must complete without errors
+   - Fix any type errors before proceeding
+
+2. **Add/Update Tests** - Ensure test coverage for new/modified code
+   - Add unit tests for new functions/classes
+   - Update existing tests if behavior changed
+   - Focus on:
+     - Core game logic (MatchDetector, GameState, etc.)
+     - Business logic (ShopSystem, UpgradeManager, GameProgressManager)
+     - Edge cases and error conditions
+   - Test files should be named `*.test.ts` and placed alongside the code they test
+
+3. **Run All Tests** - Verify nothing broke
+   ```bash
+   npm run test:run
+   ```
+   - All tests must pass
+   - Fix any failing tests before committing
+   - If a test fails, either fix the code or update the test (if behavior intentionally changed)
+
+**This workflow is NON-NEGOTIABLE and must be followed for every code change, no matter how small.**
+
+### Testing Strategy
+- **Unit Tests**: Focus on pure logic without Phaser dependencies
+  - MatchDetector (match detection, swap validation)
+  - GameProgressManager (round progression, scoring)
+  - ShopSystem (purchases, cost calculations)
+  - UpgradeManager (effect calculations)
+- **Test Helpers**: Use `TileFactory` for creating mock game state
+- **Mocking**: Tile class is mocked to avoid Phaser dependencies in tests
+- **Coverage Goals**: All game logic should have unit tests
 
 ### Visual Polish
 - **Smooth Animations**:
