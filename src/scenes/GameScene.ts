@@ -55,16 +55,16 @@ export class GameScene extends Phaser.Scene {
       shipType = 'ship-ludicrous';
     }
 
-    // Responsive font sizes and positioning
+    // Responsive font sizes and positioning per design spec
     const isMobile = GAME_CONFIG.IS_MOBILE;
     const fontSize = {
-      title: isMobile ? '24px' : '28px',
+      title: isMobile ? '24px' : '36px', // mobile: text-2xl, desktop: text-4xl
       subtitle: isMobile ? '16px' : '18px',
       speed: isMobile ? '16px' : '20px'
     };
 
     const uiX = GAME_CONFIG.BOARD_OFFSET_X;
-    let currentY = isMobile ? 10 : 30;
+    let currentY = isMobile ? 16 : 32; // Match page padding (16px mobile, 32px desktop)
 
     // Round indicator
     const roundText = this.add.text(
@@ -80,16 +80,16 @@ export class GameScene extends Phaser.Scene {
     );
 
     // Calculate position after the text, centered vertically with the text
-    const iconX = uiX + roundText.width + (isMobile ? 10 : 30);
+    const iconX = uiX + roundText.width + (isMobile ? 20 : 30);
     const iconY = roundText.y + (roundText.height / 2);
 
     // Add ship icon after the text (scaled for mobile)
     const shipIcon = this.add.image(iconX, iconY, shipType);
     if (isMobile) {
-      shipIcon.setScale(0.57); // Scale down from 70 to ~40
+      shipIcon.setScale(0.71); // Bigger icon on mobile (50px instead of 40px)
     }
 
-    currentY += roundText.height + (isMobile ? 3 : 10);
+    currentY += roundText.height + (isMobile ? 16 : 32); // Match margin-bottom spec
 
     // Speed warning for higher rounds
     if (speedMultiplier > 1) {

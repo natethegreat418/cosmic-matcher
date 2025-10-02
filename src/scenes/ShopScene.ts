@@ -37,24 +37,27 @@ export class ShopScene extends Phaser.Scene {
     // Background
     this.cameras.main.setBackgroundColor('#2a2a2a');
 
-    // Responsive font sizes - reduced to fit more content
+    // Responsive font sizes per design spec
     const fontSize = {
-      header: isMobile ? '26px' : '36px',
-      score: isMobile ? '18px' : '24px',
-      instructions: isMobile ? '12px' : '14px',
-      warning: isMobile ? '11px' : '13px',
+      header: isMobile ? '36px' : '60px', // text-4xl / text-6xl
+      score: isMobile ? '20px' : '24px', // text-xl / text-2xl
+      instructions: isMobile ? '14px' : '16px', // text-sm / text-base
+      warning: isMobile ? '14px' : '16px', // text-sm / text-base
       message: isMobile ? '14px' : '16px',
-      button: isMobile ? '18px' : '22px',
-      hint: isMobile ? '11px' : '14px'
+      button: isMobile ? '20px' : '24px', // text-xl / text-2xl
+      pagination: isMobile ? '14px' : '16px', // text-sm / text-base
+      itemTitle: isMobile ? '18px' : '20px', // text-lg / text-xl
+      itemDesc: isMobile ? '14px' : '16px', // text-sm / text-base
+      cost: isMobile ? '20px' : '24px' // text-xl / text-2xl
     };
 
-    let currentY = isMobile ? 30 : 50;
+    let currentY = isMobile ? 32 : 32; // More top margin on mobile
 
-    // Shop header
+    // Shop header with cart icons (no emojis in title per spec)
     const headerText = this.add.text(
       centerX,
       currentY,
-      '🛒 COSMIC SHOP 🛒',
+      'COSMIC SHOP',
       {
         fontSize: fontSize.header,
         color: '#F59E0B', // Solar gold
@@ -65,6 +68,22 @@ export class ShopScene extends Phaser.Scene {
       }
     );
     headerText.setOrigin(0.5, 0.5);
+
+    // Add cart icons on sides (32px mobile / 40px desktop per spec)
+    const cartSize = isMobile ? 32 : 40;
+    this.add.text(
+      centerX - headerText.width / 2 - cartSize - 10,
+      currentY,
+      '🛒',
+      { fontSize: `${cartSize}px` }
+    ).setOrigin(0.5, 0.5);
+
+    this.add.text(
+      centerX + headerText.width / 2 + cartSize + 10,
+      currentY,
+      '🛒',
+      { fontSize: `${cartSize}px` }
+    ).setOrigin(0.5, 0.5);
 
     // Animate header only on first load
     if (!this.hasAnimated) {
@@ -124,24 +143,27 @@ export class ShopScene extends Phaser.Scene {
     );
     warningText.setOrigin(0.5, 0.5);
 
-    currentY += isMobile ? 25 : 35;
+    currentY += isMobile ? 30 : 35;
 
-    // Display shop items with pagination
-    const itemsStartY = currentY;
-    const itemHeight = isMobile ? 110 : 120;
-    this.displayShopItems(centerX, itemsStartY);
-
-    // Calculate position for message and pagination controls
+    // Pagination controls - ABOVE items per spec
     const availableItems = this.shopSystem.getAvailableItems();
-    const visibleItems = Math.min(availableItems.length, this.itemsPerPage);
-    currentY = itemsStartY + (visibleItems > 0 ? visibleItems * itemHeight + 10 : 70);
-
-    // Pagination controls
     const totalPages = Math.ceil(availableItems.length / this.itemsPerPage);
     if (totalPages > 1) {
       this.createPaginationControls(centerX, currentY, totalPages);
-      currentY += isMobile ? 60 : 70;
+      currentY += isMobile ? 50 : 50; // More spacing after pagination
     }
+
+    currentY += isMobile ? 20 : 25; // More spacing before items
+
+    // Display shop items
+    const itemsStartY = currentY;
+    const itemHeight = isMobile ? 110 : 110; // Match actual item height
+    const itemGap = isMobile ? 8 : 12; // Gap between items (matches displayShopItems)
+    this.displayShopItems(centerX, itemsStartY);
+
+    // Calculate position for message (no bottom pagination per spec)
+    const visibleItems = Math.min(availableItems.length, this.itemsPerPage);
+    currentY = itemsStartY + (visibleItems > 0 ? visibleItems * (itemHeight + itemGap) + 20 : 70);
 
     // Message area for feedback
     this.messageText = this.add.text(
@@ -188,13 +210,14 @@ export class ShopScene extends Phaser.Scene {
     }
     this.itemContainer = this.add.container(0, 0);
 
-    const itemHeight = isMobile ? 110 : 120;
+    const itemHeight = isMobile ? 110 : 110; // Reduced desktop height
+    const itemGap = isMobile ? 8 : 12; // Gap between items
     const startIndex = this.currentPage * this.itemsPerPage;
     const endIndex = Math.min(startIndex + this.itemsPerPage, availableItems.length);
 
     const itemsToDisplay = availableItems.slice(startIndex, endIndex);
     itemsToDisplay.forEach((item, index) => {
-      this.createShopItemUI(item, centerX, startY + (index * itemHeight));
+      this.createShopItemUI(item, centerX, startY + (index * (itemHeight + itemGap)));
     });
 
     // Enable swipe on mobile
@@ -226,14 +249,15 @@ export class ShopScene extends Phaser.Scene {
     const purchaseCount = this.shopSystem.getItemPurchaseCount(item.id);
     const isMobile = GAME_CONFIG.IS_MOBILE;
 
-    // Responsive sizing - increased height for larger icons
-    const itemWidth = isMobile ? Math.min(this.cameras.main.width - 30, 370) : 700;
-    const itemHeight = isMobile ? 100 : 110;
+    // Responsive sizing per design spec
+    const itemWidth = isMobile ? Math.min(this.cameras.main.width - 32, 400) : 750; // Increased width
+    const itemHeight = isMobile ? 110 : 110; // Match height from display logic
+    // Use fontSize from create() method per design spec
     const fontSize = {
-      name: isMobile ? '14px' : '20px',
-      description: isMobile ? '11px' : '14px',
-      cost: isMobile ? '14px' : '20px',
-      button: isMobile ? '13px' : '16px'
+      name: isMobile ? '18px' : '20px', // text-lg / text-xl
+      description: isMobile ? '14px' : '16px', // text-sm / text-base
+      cost: isMobile ? '20px' : '24px', // text-xl / text-2xl
+      button: isMobile ? '16px' : '18px' // text-base / text-lg
     };
 
     // Item background
@@ -297,8 +321,9 @@ export class ShopScene extends Phaser.Scene {
     ).setOrigin(0, 0.5);
 
     // Item description (shorter on mobile) - also offset if there's an icon
-    const descriptionYOffset = isMobile ? 15 : 10;
-    const maxDescriptionWidth = isMobile ? itemWidth - 160 - iconOffset : 500;
+    const descriptionYOffset = isMobile ? 15 : 15;
+    // Leave room for cost + button on the right (roughly 200px)
+    const maxDescriptionWidth = isMobile ? itemWidth - 160 - iconOffset : itemWidth - iconOffset - 250;
 
     this.add.text(
       centerX + leftMargin + iconOffset,
@@ -475,16 +500,53 @@ export class ShopScene extends Phaser.Scene {
 
   private createContinueButton(centerX: number, y: number): void {
     const isMobile = GAME_CONFIG.IS_MOBILE;
-    const btnWidth = isMobile ? 200 : 250;
-    const btnHeight = isMobile ? 50 : 60;
-    const btnFontSize = isMobile ? '18px' : '24px';
+    const screenHeight = this.cameras.main.height;
+    const screenWidth = this.cameras.main.width;
 
-    const continueBtn = this.add.rectangle(centerX, y, btnWidth, btnHeight, 0x00F5FF);
+    // Per design spec: px-12/16 py-4/6, text-xl/2xl
+    const btnWidth = isMobile ? screenWidth - 32 : 300; // Full width - padding on mobile
+    const btnPaddingY = isMobile ? 16 : 24; // py-4 / py-6
+    const btnFontSize = isMobile ? '20px' : '24px'; // text-xl / text-2xl
+
+    // On mobile, position button in sticky bottom shelf
+    const buttonY = isMobile ? screenHeight - 48 : y; // Sticky bottom on mobile
+
+    // Create sticky shelf background for mobile
+    if (isMobile) {
+      // Gradient background from-[#1a1a1a] to-[#2a2a2a]
+      const shelfHeight = 96; // Enough for padding + button
+      const shelf = this.add.rectangle(
+        centerX,
+        screenHeight - shelfHeight / 2,
+        this.cameras.main.width,
+        shelfHeight,
+        0x1a1a1a
+      );
+      shelf.setScrollFactor(0); // Make it fixed/sticky
+      shelf.setDepth(1000);
+
+      // Add top border
+      const border = this.add.rectangle(
+        centerX,
+        screenHeight - shelfHeight,
+        this.cameras.main.width,
+        1,
+        0x4a4a4a
+      );
+      border.setScrollFactor(0);
+      border.setDepth(1000);
+    }
+
+    const continueBtn = this.add.rectangle(centerX, buttonY, btnWidth, btnPaddingY * 2 + 24, 0x00F5FF);
     continueBtn.setInteractive({ useHandCursor: true });
+    if (isMobile) {
+      continueBtn.setScrollFactor(0); // Make button sticky
+      continueBtn.setDepth(1001);
+    }
 
     const btnText = this.add.text(
       centerX,
-      y,
+      buttonY,
       'Start Next Round',
       {
         fontSize: btnFontSize,
@@ -494,6 +556,10 @@ export class ShopScene extends Phaser.Scene {
       }
     );
     btnText.setOrigin(0.5, 0.5);
+    if (isMobile) {
+      btnText.setScrollFactor(0); // Make text sticky
+      btnText.setDepth(1002);
+    }
 
     // Button hover effect
     continueBtn.on('pointerover', () => {
@@ -530,8 +596,8 @@ export class ShopScene extends Phaser.Scene {
 
   private createPaginationControls(centerX: number, y: number, totalPages: number): void {
     const isMobile = GAME_CONFIG.IS_MOBILE;
-    const fontSize = isMobile ? '16px' : '18px';
-    const buttonSize = isMobile ? 40 : 50;
+    const fontSize = isMobile ? '14px' : '14px'; // Smaller pagination text
+    const buttonSize = isMobile ? 32 : 32; // Smaller pagination buttons
 
     // Page indicator text
     const pageText = this.add.text(
@@ -553,7 +619,7 @@ export class ShopScene extends Phaser.Scene {
       prevBtn.setInteractive({ useHandCursor: true });
 
       const prevText = this.add.text(centerX - 120, y, '◀', {
-        fontSize: isMobile ? '20px' : '24px',
+        fontSize: '16px', // Smaller arrow
         color: '#000000',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -580,7 +646,7 @@ export class ShopScene extends Phaser.Scene {
       nextBtn.setInteractive({ useHandCursor: true });
 
       const nextText = this.add.text(centerX + 120, y, '▶', {
-        fontSize: isMobile ? '20px' : '24px',
+        fontSize: '16px', // Smaller arrow
         color: '#000000',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'

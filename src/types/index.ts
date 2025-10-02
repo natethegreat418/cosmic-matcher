@@ -4,16 +4,18 @@ const isMobile = () => window.innerWidth < 768;
 // Calculate responsive tile size and layout
 const getTileConfig = () => {
   const GRID_SIZE = 8;
-  const TILE_SPACING = 4;
+  const mobile = isMobile();
+  const TILE_SPACING = mobile ? 2 : 4; // 2px mobile, 4px desktop
 
-  if (isMobile()) {
+  if (mobile) {
     const screenWidth = Math.min(window.innerWidth, 500);
-    const maxGridWidth = screenWidth - 20; // 10px padding on each side
+    const maxGridWidth = screenWidth - 32; // 16px padding on each side
     const tileSize = Math.floor((maxGridWidth - ((GRID_SIZE - 1) * TILE_SPACING)) / GRID_SIZE);
     return {
       tileSize: Math.min(tileSize, 50), // Cap at 50px for mobile
-      offsetX: 10,
-      offsetY: 80 // Reduced space for tighter UI
+      tileBorderRadius: 2, // 2px mobile
+      offsetX: 16, // 16px padding
+      offsetY: 80
     };
   }
 
@@ -27,6 +29,7 @@ const getTileConfig = () => {
 
   return {
     tileSize: tileSize,
+    tileBorderRadius: 6, // 6px desktop
     offsetX: offsetX,
     offsetY: 120
   };
@@ -38,7 +41,8 @@ export const GAME_CONFIG = {
   GRID_WIDTH: 8,
   GRID_HEIGHT: 8,
   TILE_SIZE: tileConfig.tileSize,
-  TILE_SPACING: 4,
+  TILE_SPACING: isMobile() ? 2 : 4, // 2px mobile, 4px desktop
+  TILE_BORDER_RADIUS: tileConfig.tileBorderRadius,
   COLORS: ['deepSpaceBlue', 'nebulaPurple', 'cosmicTeal', 'solarGold', 'meteorSilver', 'plasmaPink'] as const,
   ANIMATION_DURATION: 300,
   BOARD_OFFSET_X: tileConfig.offsetX,

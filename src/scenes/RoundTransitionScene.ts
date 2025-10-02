@@ -34,17 +34,18 @@ export class RoundTransitionScene extends Phaser.Scene {
     // Background
     this.cameras.main.setBackgroundColor('#2a2a2a');
 
-    // Responsive font sizes
+    // Responsive font sizes per design spec
     const fontSize = {
-      header: isMobile ? '32px' : '48px',
-      score: isMobile ? '22px' : '32px',
-      nextRound: isMobile ? '16px' : '20px',
-      button: isMobile ? '20px' : '24px',
+      header: isMobile ? '36px' : '60px', // Smaller header on mobile to fit
+      score: isMobile ? '24px' : '30px', // Round score: text-2xl / text-3xl
+      totalScore: isMobile ? '30px' : '36px', // Total score: text-3xl / text-4xl
+      nextRound: isMobile ? '20px' : '24px', // text-xl / text-2xl
+      button: isMobile ? '20px' : '20px', // text-xl
       hint: isMobile ? '12px' : '14px'
     };
 
     // Responsive spacing
-    let currentY = isMobile ? 40 : 100;
+    let currentY = isMobile ? 30 : 60; // More top spacing on mobile
 
     // Round complete header
     const headerText = this.add.text(
@@ -57,7 +58,7 @@ export class RoundTransitionScene extends Phaser.Scene {
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: isMobile ? 2 : 4
+        strokeThickness: isMobile ? 1 : 4
       }
     );
     headerText.setOrigin(0.5, 0.5);
@@ -70,7 +71,7 @@ export class RoundTransitionScene extends Phaser.Scene {
       ease: 'Back.easeOut'
     });
 
-    currentY += isMobile ? 60 : 100;
+    currentY += isMobile ? 35 : 100;
 
     // Round score
     this.add.text(
@@ -84,15 +85,15 @@ export class RoundTransitionScene extends Phaser.Scene {
       }
     ).setOrigin(0.5, 0.5);
 
-    currentY += isMobile ? 35 : 50;
+    currentY += isMobile ? 30 : 50;
 
-    // Total score
+    // Total score (larger font per spec)
     const totalText = this.add.text(
       centerX,
       currentY,
       `Total Score: ${progressManager.getTotalScore().toLocaleString()}`,
       {
-        fontSize: fontSize.score,
+        fontSize: fontSize.totalScore,
         color: '#F59E0B', // Solar gold
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -100,13 +101,14 @@ export class RoundTransitionScene extends Phaser.Scene {
     );
     totalText.setOrigin(0.5, 0.5);
 
-    currentY += isMobile ? 50 : 90;
+    currentY += isMobile ? 35 : 90;
 
     // Progress indicator
     this.createProgressIndicator(centerX, currentY);
 
     // Account for 2 rows on both mobile and desktop (add extra space)
-    currentY += isMobile ? 125 : 150;
+    // Desktop needs more space: (64px ship × 2 rows) + (24px gap) + (20px text height) + margin
+    currentY += isMobile ? 125 : 200;
 
     // Next round preview with speed warning
     const nextRound = progressManager.getCurrentRound();
@@ -134,26 +136,59 @@ export class RoundTransitionScene extends Phaser.Scene {
 
       // Buttons positioned at bottom on mobile, inline on desktop
       if (isMobile) {
-        // Mobile: Stack buttons vertically at bottom
+        // Mobile: Stack buttons vertically in sticky bottom shelf (matches shop style)
         const screenHeight = this.cameras.main.height;
-        const buttonY = screenHeight - 120;
+        const screenWidth = this.cameras.main.width;
+        const btnPaddingY = 16; // py-4 on mobile
+        const btnHeight = btnPaddingY * 2 + 24; // Same as shop: 56px
+        const shelfHeight = 148; // Enough for 2 buttons + padding + gap (56+8+56+16+12)
 
-        // Visit Shop button (green)
+        // Create sticky shelf background (matches shop)
+        const shelf = this.add.rectangle(
+          centerX,
+          screenHeight - shelfHeight / 2,
+          screenWidth,
+          shelfHeight,
+          0x1a1a1a
+        );
+        shelf.setScrollFactor(0);
+        shelf.setDepth(1000);
+
+        // Add top border (matches shop)
+        const border = this.add.rectangle(
+          centerX,
+          screenHeight - shelfHeight,
+          screenWidth,
+          1,
+          0x4a4a4a
+        );
+        border.setScrollFactor(0);
+        border.setDepth(1000);
+
+        // Button positioning - center buttons in shelf with padding
+        const topPadding = 16;
+        const gap = 8;
+        const buttonY1 = screenHeight - shelfHeight + topPadding + btnHeight / 2;
+        const buttonY2 = buttonY1 + btnHeight + gap;
+
+        // Visit Shop button (green) - full width
         this.createButton(
           centerX,
-          buttonY,
+          buttonY1,
           'Visit Shop',
           () => this.scene.start('ShopScene'),
-          0x10B981 // Spacey green
+          0x10B981, // Spacey green
+          true // sticky
         );
 
-        // Skip to Next Round button (cyan)
+        // Skip to Next Round button (cyan) - full width
         this.createButton(
           centerX,
-          buttonY + 60,
+          buttonY2,
           'Skip to Next Round',
           () => this.scene.start('GameScene'),
-          0x00F5FF // Cyan
+          0x00F5FF, // Cyan
+          true // sticky
         );
       } else {
         // Desktop: Two buttons side by side
@@ -230,33 +265,41 @@ export class RoundTransitionScene extends Phaser.Scene {
 
     if (isMobile) {
       // Mobile: 2 rows of 5 ships (vertical stacking)
-      const shipSpacing = 65;
-      const rowSpacing = 65;
-      const shipScale = 0.6;
+      const shipSize = 48; // w-12 h-12
+      const gap = 16; // gap-4
+      const shipScale = shipSize / 60; // 60 is default ship size
       const shipsPerRow = 5;
+
+      // Total width includes ship sizes + gaps between them
+      const totalWidth = (shipSize * shipsPerRow) + (gap * (shipsPerRow - 1));
+      const startX = centerX - totalWidth / 2;
 
       for (let i = 1; i <= 10; i++) {
         const row = Math.floor((i - 1) / shipsPerRow);
         const col = (i - 1) % shipsPerRow;
 
-        const x = centerX - (shipsPerRow - 1) * shipSpacing / 2 + col * shipSpacing;
-        const shipY = y + row * rowSpacing;
+        const x = startX + (shipSize / 2) + col * (shipSize + gap);
+        const shipY = y + row * (shipSize + gap);
 
         this.createShipIcon(i, x, shipY, currentRound, shipScale);
       }
     } else {
       // Desktop: 2 rows of 5 ships (same as mobile layout)
-      const shipSpacing = 85;
-      const rowSpacing = 80;
-      const shipScale = 1.0;
+      const shipSize = 64; // w-16 h-16
+      const gap = 24; // gap-6
+      const shipScale = shipSize / 60; // 60 is default ship size
       const shipsPerRow = 5;
+
+      // Total width includes ship sizes + gaps between them
+      const totalWidth = (shipSize * shipsPerRow) + (gap * (shipsPerRow - 1));
+      const startX = centerX - totalWidth / 2;
 
       for (let i = 1; i <= 10; i++) {
         const row = Math.floor((i - 1) / shipsPerRow);
         const col = (i - 1) % shipsPerRow;
 
-        const x = centerX - (shipsPerRow - 1) * shipSpacing / 2 + col * shipSpacing;
-        const shipY = y + row * rowSpacing;
+        const x = startX + (shipSize / 2) + col * (shipSize + gap);
+        const shipY = y + row * (shipSize + gap);
 
         this.createShipIcon(i, x, shipY, currentRound, shipScale);
       }
@@ -309,10 +352,10 @@ export class RoundTransitionScene extends Phaser.Scene {
     // Add small round number below ship
     this.add.text(
       x,
-      y + (isMobile ? 30 : 45),
+      y + (isMobile ? 30 : 40),
       roundNum.toString(),
       {
-        fontSize: isMobile ? '12px' : '14px',
+        fontSize: isMobile ? '18px' : '20px', // text-lg / text-xl per spec
         color: roundNum <= currentRound ? '#00F5FF' : '#666666',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -320,14 +363,19 @@ export class RoundTransitionScene extends Phaser.Scene {
     ).setOrigin(0.5, 0.5);
   }
 
-  private createButton(x: number, y: number, text: string, onClick: () => void, color: number = 0x00F5FF): void {
+  private createButton(x: number, y: number, text: string, onClick: () => void, color: number = 0x00F5FF, sticky: boolean = false): void {
     const isMobile = GAME_CONFIG.IS_MOBILE;
-    const btnWidth = isMobile ? 200 : 180;
-    const btnHeight = isMobile ? 50 : 60;
-    const btnFontSize = isMobile ? '18px' : '20px';
+    const screenWidth = this.cameras.main.width;
+    const btnWidth = (isMobile && sticky) ? screenWidth - 32 : 200; // Full width - padding on mobile sticky
+    const btnHeight = 56; // h-14 (56px) per spec
+    const btnFontSize = '20px'; // text-xl per spec
 
     const btn = this.add.rectangle(x, y, btnWidth, btnHeight, color);
     btn.setInteractive({ useHandCursor: true });
+    if (sticky) {
+      btn.setScrollFactor(0);
+      btn.setDepth(1001);
+    }
 
     const btnText = this.add.text(x, y, text, {
       fontSize: btnFontSize,
@@ -336,6 +384,10 @@ export class RoundTransitionScene extends Phaser.Scene {
       fontStyle: 'bold'
     });
     btnText.setOrigin(0.5, 0.5);
+    if (sticky) {
+      btnText.setScrollFactor(0);
+      btnText.setDepth(1002);
+    }
 
     // Define hover colors based on button color
     let hoverColor: number;
