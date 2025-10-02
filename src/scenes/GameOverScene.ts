@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { GameProgressManager } from '../game/GameProgressManager';
+import { LocalStorageManager } from '../services/LocalStorageManager';
 
 export class GameOverScene extends Phaser.Scene {
   constructor() {
@@ -18,6 +19,9 @@ export class GameOverScene extends Phaser.Scene {
     const centerX = this.cameras.main.width / 2;
     const progressManager = GameProgressManager.getInstance();
     const progress = progressManager.getProgress();
+
+    // Clear saved game - game is complete
+    LocalStorageManager.clearSave();
 
     // Background
     this.cameras.main.setBackgroundColor('#2a2a2a');

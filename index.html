@@ -65,11 +65,17 @@
         margin-bottom: 20px;
       }
 
+      .button-container {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+        max-width: 300px;
+        margin: 40px auto 0;
+      }
+
       .play-button {
         display: block;
         width: 100%;
-        max-width: 300px;
-        margin: 40px auto 0;
         padding: 20px 40px;
         font-size: 1.5em;
         font-weight: bold;
@@ -88,6 +94,20 @@
         background: #14D89A;
         transform: scale(1.05);
         box-shadow: 0 7px 20px rgba(16, 185, 129, 0.6);
+      }
+
+      .play-button.secondary {
+        background: #00F5FF;
+        box-shadow: 0 5px 15px rgba(0, 245, 255, 0.4);
+      }
+
+      .play-button.secondary:hover {
+        background: #5FFBFF;
+        box-shadow: 0 7px 20px rgba(0, 245, 255, 0.6);
+      }
+
+      .hidden {
+        display: none;
       }
 
       .highlight {
@@ -140,9 +160,32 @@
       </ul>
 
       <h2>Power-Ups</h2>
-      <p>Visit the <span class="highlight">Cosmic Shop</span> between rounds to spend your score on upgrades. Choose carefully how you spend your valuable score!
+      <p>Visit the <span class="highlight">Cosmic Shop</span> between rounds to spend your score on upgrades. Choose carefully how you spend your valuable score!</p>
 
-      <a href="/game.html" class="play-button">START PLAYING</a>
+      <div id="button-container" class="button-container">
+        <!-- Buttons will be dynamically added here -->
+      </div>
     </div>
+
+    <script type="module">
+      // Import LocalStorageManager to check for saved game
+      import { LocalStorageManager } from '/src/services/LocalStorageManager.ts';
+
+      const buttonContainer = document.getElementById('button-container');
+      const hasSave = LocalStorageManager.hasSaveGame();
+
+      if (hasSave) {
+        // Show Continue and New Game buttons
+        buttonContainer.innerHTML = `
+          <a href="/game.html?continue=true" class="play-button">CONTINUE GAME</a>
+          <a href="/game.html?new=true" class="play-button secondary">NEW GAME</a>
+        `;
+      } else {
+        // Show only Start Playing button
+        buttonContainer.innerHTML = `
+          <a href="/game.html" class="play-button">START PLAYING</a>
+        `;
+      }
+    </script>
   </body>
 </html>

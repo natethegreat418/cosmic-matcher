@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { GameProgressManager } from '../game/GameProgressManager';
+import { LocalStorageManager } from '../services/LocalStorageManager';
 import { GAME_CONFIG } from '../types';
 import type { RoundResult } from '../types/Progress';
 
@@ -26,6 +27,9 @@ export class RoundTransitionScene extends Phaser.Scene {
     const centerX = this.cameras.main.width / 2;
     const progressManager = GameProgressManager.getInstance();
     const isMobile = GAME_CONFIG.IS_MOBILE;
+
+    // Auto-save after round completion
+    LocalStorageManager.saveGame();
 
     // Background
     this.cameras.main.setBackgroundColor('#2a2a2a');

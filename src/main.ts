@@ -4,6 +4,9 @@ import { GameScene } from './scenes/GameScene';
 import { RoundTransitionScene } from './scenes/RoundTransitionScene';
 import { ShopScene } from './scenes/ShopScene';
 import { GameOverScene } from './scenes/GameOverScene';
+import { LocalStorageManager } from './services/LocalStorageManager';
+import { GameProgressManager } from './game/GameProgressManager';
+import { ShopSystem } from './game/ShopSystem';
 
 // Calculate responsive dimensions for mobile and desktop
 const getGameDimensions = () => {
@@ -38,5 +41,28 @@ const config: Phaser.Types.Core.GameConfig = {
     autoCenter: Phaser.Scale.CENTER_BOTH
   }
 };
+
+// Check URL parameters to determine game flow
+const urlParams = new URLSearchParams(window.location.search);
+const shouldContinue = urlParams.has('continue');
+const shouldStartNew = urlParams.has('new');
+
+if (shouldContinue) {
+  // Load saved game
+  const savedState = LocalStorageManager.loadGame();
+
+  if (savedState) {
+    const progressManager = GameProgressManager.getInstance();
+    const shopSystem = ShopSystem.getInstance();
+
+    progressManager.loadFromSave(savedState);
+    shopSystem.loadPurchaseCounts(savedState.shopPurchaseCounts);
+  }
+} else if (shouldStartNew) {
+  // Start new game (clear any existing save)
+  const progressManager = GameProgressManager.getInstance();
+  progressManager.startNewGame();
+}
+// If no parameters, just start fresh (default behavior)
 
 new Phaser.Game(config);

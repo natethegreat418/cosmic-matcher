@@ -132,6 +132,26 @@ export class ShopSystem {
     }
   }
 
+  /**
+   * Exports current purchase counts for saving
+   */
+  public getPurchaseCounts(): { [itemId: string]: number } {
+    const counts: { [itemId: string]: number } = {};
+    this.items.forEach(item => {
+      counts[item.id] = item.purchaseCount;
+    });
+    return counts;
+  }
+
+  /**
+   * Loads purchase counts from a saved game
+   */
+  public loadPurchaseCounts(counts: { [itemId: string]: number }): void {
+    this.items.forEach(item => {
+      item.purchaseCount = counts[item.id] || 0;
+    });
+  }
+
   // Reset instance for testing
   public static resetInstance(): void {
     ShopSystem.instance = null;

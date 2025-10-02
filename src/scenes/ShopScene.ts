@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { GameProgressManager } from '../game/GameProgressManager';
 import { ShopSystem } from '../game/ShopSystem';
+import { LocalStorageManager } from '../services/LocalStorageManager';
 import { GAME_CONFIG } from '../types';
 import type { ShopItem } from '../types/Progress';
 
@@ -448,6 +449,9 @@ export class ShopScene extends Phaser.Scene {
     }
 
     if (result.success) {
+      // Auto-save after successful purchase
+      LocalStorageManager.saveGame();
+
       // Update score display
       if (this.pointsText) {
         this.pointsText.setText(

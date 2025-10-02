@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 import { Grid } from '../game/Grid';
 import { GameState } from '../game/GameState';
 import { GameProgressManager } from '../game/GameProgressManager';
+import { LocalStorageManager } from '../services/LocalStorageManager';
 import { GAME_CONFIG } from '../types';
 
 export class GameScene extends Phaser.Scene {
@@ -36,6 +37,9 @@ export class GameScene extends Phaser.Scene {
     const currentRound = progressManager.getCurrentRound();
     const totalScore = progressManager.getTotalScore();
     const speedMultiplier = progressManager.getTimerSpeedMultiplier();
+
+    // Auto-save before round starts (captures any shop changes)
+    LocalStorageManager.saveGame();
 
     // Determine ship type for current round
     let shipType: string;

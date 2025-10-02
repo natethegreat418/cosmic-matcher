@@ -1,5 +1,7 @@
 import type { GameProgress, RoundResult } from '../types/Progress';
+import type { SavedGameState } from '../types/Storage';
 import { ShopSystem } from './ShopSystem';
+import { LocalStorageManager } from '../services/LocalStorageManager';
 
 export class GameProgressManager {
   private static instance: GameProgressManager | null = null;
@@ -35,6 +37,26 @@ export class GameProgressManager {
     // Reset shop purchases for new game
     const shopSystem = ShopSystem.getInstance();
     shopSystem.resetPurchases();
+
+    // Clear saved game from localStorage
+    LocalStorageManager.clearSave();
+  }
+
+  /**
+   * Loads game state from a saved game
+   * Used when continuing a saved game
+   */
+  public loadFromSave(savedState: SavedGameState): void {
+    this.progress = {
+      currentRound: savedState.currentRound,
+      totalScore: savedState.totalScore,
+      roundScores: savedState.roundScores,
+      availablePoints: savedState.availablePoints,
+      spentPoints: savedState.spentPoints,
+      ownedUpgrades: savedState.ownedUpgrades,
+      roundTimer: 60, // Always 60
+      isComplete: savedState.isComplete
+    };
   }
 
   public completeRound(roundScore: number): RoundResult {
