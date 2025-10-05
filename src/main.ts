@@ -4,6 +4,8 @@ import { GameScene } from './scenes/GameScene';
 import { RoundTransitionScene } from './scenes/RoundTransitionScene';
 import { ShopScene } from './scenes/ShopScene';
 import { GameOverScene } from './scenes/GameOverScene';
+import { NameEntryScene } from './scenes/NameEntryScene';
+import { LeaderboardScene } from './scenes/LeaderboardScene';
 import { LocalStorageManager } from './services/LocalStorageManager';
 import { GameProgressManager } from './game/GameProgressManager';
 import { ShopSystem } from './game/ShopSystem';
@@ -28,7 +30,7 @@ const config: Phaser.Types.Core.GameConfig = {
   height: dimensions.height,
   parent: 'app',
   backgroundColor: '#2a2a2a',
-  scene: [GameScene, RoundTransitionScene, ShopScene, GameOverScene],
+  scene: [GameScene, RoundTransitionScene, ShopScene, GameOverScene, NameEntryScene, LeaderboardScene],
   physics: {
     default: 'arcade',
     arcade: {
@@ -46,6 +48,7 @@ const config: Phaser.Types.Core.GameConfig = {
 const urlParams = new URLSearchParams(window.location.search);
 const shouldContinue = urlParams.has('continue');
 const shouldStartNew = urlParams.has('new');
+const shouldShowLeaderboard = urlParams.has('leaderboard');
 
 if (shouldContinue) {
   // Load saved game
@@ -65,4 +68,11 @@ if (shouldContinue) {
 }
 // If no parameters, just start fresh (default behavior)
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+// Handle leaderboard parameter - start the leaderboard scene
+if (shouldShowLeaderboard) {
+  game.events.once('ready', () => {
+    game.scene.start('LeaderboardScene');
+  });
+}

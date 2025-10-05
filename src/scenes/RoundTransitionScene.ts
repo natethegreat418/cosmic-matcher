@@ -34,6 +34,9 @@ export class RoundTransitionScene extends Phaser.Scene {
     // Background
     this.cameras.main.setBackgroundColor('#2a2a2a');
 
+    // Abandon Ship button (top right)
+    this.createAbandonButton();
+
     // Responsive font sizes per design spec
     const fontSize = {
       header: isMobile ? '36px' : '60px', // Smaller header on mobile to fit
@@ -362,6 +365,72 @@ export class RoundTransitionScene extends Phaser.Scene {
         fontStyle: 'bold'
       }
     ).setOrigin(0.5, 0.5);
+  }
+
+  private createAbandonButton(): void {
+    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const screenWidth = this.cameras.main.width;
+
+    // Position in top right corner
+    const buttonX = screenWidth - (isMobile ? 90 : 110);
+    const buttonY = isMobile ? 20 : 30;
+    const buttonWidth = isMobile ? 105 : 120;
+    const buttonHeight = isMobile ? 35 : 40;
+
+    // Button background (dark red)
+    const btn = this.add.rectangle(buttonX, buttonY, buttonWidth, buttonHeight, 0x8B0000);
+    btn.setInteractive({ useHandCursor: true });
+
+    // Text and skull icon (skull after text)
+    const btnText = this.add.text(
+      buttonX,
+      buttonY,
+      'Abandon 💀',
+      {
+        fontSize: isMobile ? '13px' : '14px',
+        color: '#ffffff',
+        fontFamily: 'Arial, sans-serif',
+        fontStyle: 'bold'
+      }
+    );
+    btnText.setOrigin(0.5);
+
+    // Hover effects
+    btn.on('pointerover', () => {
+      btn.setFillStyle(0xDC143C); // Brighter red
+      if (!isMobile) {
+        this.tweens.add({
+          targets: btn,
+          scaleX: 1.05,
+          scaleY: 1.05,
+          duration: 100
+        });
+      }
+    });
+
+    btn.on('pointerout', () => {
+      btn.setFillStyle(0x8B0000);
+      btn.setScale(1);
+    });
+
+    btn.on('pointerdown', () => {
+      this.abandonGame();
+    });
+  }
+
+  private abandonGame(): void {
+    // Mark game as complete and end it
+    const progressManager = GameProgressManager.getInstance();
+    const progress = progressManager.getProgress();
+
+    // Mark as complete (but not truly complete - abandoned)
+    progress.isComplete = true;
+
+    // Clear save since we're ending the game
+    LocalStorageManager.clearSave();
+
+    // Go to game over scene
+    this.scene.start('GameOverScene');
   }
 
   private createButton(x: number, y: number, text: string, onClick: () => void, color: number = 0x00F5FF, sticky: boolean = false): void {

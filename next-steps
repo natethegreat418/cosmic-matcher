@@ -343,9 +343,9 @@ export class GameOverScene extends Phaser.Scene {
 ### Phase 4: Leaderboard
 1. Create leaderboard submission logic
 2. Create `LeaderboardScene`
-3. Add leaderboard button to menu
-4. Test score submission
-5. Add player name prompt
+3. Test score submission
+4. Add player name prompt
+5. Add leaderboard link in nav of root page 
 
 **Testing:**
 - Submit test scores

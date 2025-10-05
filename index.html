@@ -179,11 +179,13 @@
         buttonContainer.innerHTML = `
           <a href="/game.html?continue=true" class="play-button">CONTINUE GAME</a>
           <a href="/game.html?new=true" class="play-button secondary">NEW GAME</a>
+          <a href="/game.html?leaderboard=true" class="play-button secondary">🏆 LEADERBOARD</a>
         `;
       } else {
         // Show only Start Playing button
         buttonContainer.innerHTML = `
           <a href="/game.html" class="play-button">START PLAYING</a>
+          <a href="/game.html?leaderboard=true" class="play-button secondary">🏆 LEADERBOARD</a>
         `;
       }
     </script>
