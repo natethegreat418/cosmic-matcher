@@ -508,8 +508,9 @@ export class ShopScene extends Phaser.Scene {
     const btnPaddingY = isMobile ? 16 : 24; // py-4 / py-6
     const btnFontSize = isMobile ? '20px' : '24px'; // text-xl / text-2xl
 
-    // On mobile, position button in sticky bottom shelf
-    const buttonY = isMobile ? screenHeight - 48 : y; // Sticky bottom on mobile
+    // On mobile, position button in sticky bottom shelf with safe area for Safari UI
+    const bottomSafeArea = isMobile ? 80 : 0; // Extra space for Safari bottom UI
+    const buttonY = isMobile ? screenHeight - 48 - bottomSafeArea : y; // Sticky bottom on mobile
 
     // Create sticky shelf background for mobile
     if (isMobile) {
@@ -517,7 +518,7 @@ export class ShopScene extends Phaser.Scene {
       const shelfHeight = 96; // Enough for padding + button
       const shelf = this.add.rectangle(
         centerX,
-        screenHeight - shelfHeight / 2,
+        screenHeight - shelfHeight / 2 - bottomSafeArea,
         this.cameras.main.width,
         shelfHeight,
         0x1a1a1a
@@ -528,7 +529,7 @@ export class ShopScene extends Phaser.Scene {
       // Add top border
       const border = this.add.rectangle(
         centerX,
-        screenHeight - shelfHeight,
+        screenHeight - shelfHeight - bottomSafeArea,
         this.cameras.main.width,
         1,
         0x4a4a4a

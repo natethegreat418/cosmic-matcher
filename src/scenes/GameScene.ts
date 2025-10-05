@@ -64,7 +64,7 @@ export class GameScene extends Phaser.Scene {
     };
 
     const uiX = GAME_CONFIG.BOARD_OFFSET_X;
-    let currentY = isMobile ? 16 : 32; // Match page padding (16px mobile, 32px desktop)
+    let currentY = isMobile ? 10 : 32; // Less top padding on mobile
 
     // Round indicator
     const roundText = this.add.text(
@@ -89,7 +89,7 @@ export class GameScene extends Phaser.Scene {
       shipIcon.setScale(0.71); // Bigger icon on mobile (50px instead of 40px)
     }
 
-    currentY += roundText.height + (isMobile ? 16 : 32); // Match margin-bottom spec
+    currentY += roundText.height + (isMobile ? 4 : 32); // Less margin on mobile
 
     // Speed warning for higher rounds
     if (speedMultiplier > 1) {
@@ -104,7 +104,7 @@ export class GameScene extends Phaser.Scene {
           fontStyle: 'italic'
         }
       );
-      currentY += parseInt(fontSize.speed) + (isMobile ? 3 : 5);
+      currentY += parseInt(fontSize.speed) + (isMobile ? 2 : 5);
     }
 
     // Total score display (if not first round)

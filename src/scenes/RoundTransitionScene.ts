@@ -141,12 +141,13 @@ export class RoundTransitionScene extends Phaser.Scene {
         const screenWidth = this.cameras.main.width;
         const btnPaddingY = 16; // py-4 on mobile
         const btnHeight = btnPaddingY * 2 + 24; // Same as shop: 56px
+        const bottomSafeArea = 80; // Extra space for Safari bottom UI
         const shelfHeight = 148; // Enough for 2 buttons + padding + gap (56+8+56+16+12)
 
         // Create sticky shelf background (matches shop)
         const shelf = this.add.rectangle(
           centerX,
-          screenHeight - shelfHeight / 2,
+          screenHeight - shelfHeight / 2 - bottomSafeArea,
           screenWidth,
           shelfHeight,
           0x1a1a1a
@@ -157,7 +158,7 @@ export class RoundTransitionScene extends Phaser.Scene {
         // Add top border (matches shop)
         const border = this.add.rectangle(
           centerX,
-          screenHeight - shelfHeight,
+          screenHeight - shelfHeight - bottomSafeArea,
           screenWidth,
           1,
           0x4a4a4a
@@ -168,7 +169,7 @@ export class RoundTransitionScene extends Phaser.Scene {
         // Button positioning - center buttons in shelf with padding
         const topPadding = 16;
         const gap = 8;
-        const buttonY1 = screenHeight - shelfHeight + topPadding + btnHeight / 2;
+        const buttonY1 = screenHeight - shelfHeight + topPadding + btnHeight / 2 - bottomSafeArea;
         const buttonY2 = buttonY1 + btnHeight + gap;
 
         // Visit Shop button (green) - full width

@@ -105,6 +105,8 @@ Players can spend their score between rounds on upgrades:
 
 ### Visual Features
 - **Responsive Design**: Optimized layouts for both desktop (900x700) and mobile devices
+  - **Mobile Bottom Safe Area**: All sticky bottom shelves (RoundTransitionScene, ShopScene) include an 80px bottom safe area to avoid Safari UI overlap on iOS
+  - **Sticky Bottom Buttons**: Mobile uses fixed-position bottom shelves with proper spacing to prevent browser UI from covering buttons
 - **Round Indicators**: Ship icons that evolve based on current speed (normal → medium → fast → ludicrous)
 - **Timer Display**: 60-second countdown with color-coded urgency
   - Cyan: 30+ seconds
@@ -431,6 +433,7 @@ GameOverScene (after Round 10)
   - Desktop: UI positioned right of grid
   - Mobile: UI positioned below grid
   - Dynamic font sizes and spacing
+  - **CRITICAL - Mobile Bottom Shelf**: RoundTransitionScene and ShopScene use sticky bottom shelves with an 80px `bottomSafeArea` constant to prevent Safari mobile UI from covering buttons. This value must be maintained when making layout changes to these scenes.
 
 ### Performance & Best Practices
 - **Efficient Match Detection**: O(n) grid scanning for matches
