@@ -197,35 +197,35 @@ export class GameOverScene extends Phaser.Scene {
     const btnHeight = 60;
     const gap = 15;
 
-    // Submit to Leaderboard button
+    // Submit to Leaderboard button (Primary action)
     this.createButton(
       centerX,
       startY,
       'Submit Score',
       () => this.promptForName(),
-      0x10B981, // Green
+      0x00F5FF, // Primary: Bright Cyan
       250,
       btnHeight
     );
 
-    // View Leaderboard button (light yellow)
+    // View Leaderboard button (Secondary action)
     this.createButton(
       centerX,
       startY + btnHeight + gap,
       'Leaderboard',
       () => this.scene.start('LeaderboardScene'),
-      0xFBBF24, // Light yellow
+      0xF59E0B, // Secondary: Solar Gold
       250,
       btnHeight
     );
 
-    // Play again button
+    // Play again button (Primary action)
     this.createButton(
       centerX,
       startY + (btnHeight + gap) * 2,
       'Play Again',
       () => this.startNewGame(),
-      0x00F5FF, // Cyan
+      0x00F5FF, // Primary: Bright Cyan
       250,
       btnHeight
     );
@@ -265,37 +265,37 @@ export class GameOverScene extends Phaser.Scene {
     const buttonY2 = buttonY1 + btnHeight + gap;
     const buttonY3 = buttonY2 + btnHeight + gap;
 
-    // Submit button
+    // Submit button (Primary action)
     this.createButton(
       centerX,
       buttonY1,
       'Submit to Leaderboard',
       () => this.promptForName(),
-      0x10B981,
+      0x00F5FF, // Primary: Bright Cyan
       screenWidth - 32,
       btnHeight,
       true
     );
 
-    // Leaderboard button (light yellow)
+    // Leaderboard button (Secondary action)
     this.createButton(
       centerX,
       buttonY2,
       'View Leaderboard',
       () => this.scene.start('LeaderboardScene'),
-      0xFBBF24, // Light yellow
+      0xF59E0B, // Secondary: Solar Gold
       screenWidth - 32,
       btnHeight,
       true
     );
 
-    // Play again button
+    // Play again button (Primary action)
     this.createButton(
       centerX,
       buttonY3,
       'Play Again',
       () => this.startNewGame(),
-      0x00F5FF,
+      0x00F5FF, // Primary: Bright Cyan
       screenWidth - 32,
       btnHeight,
       true
@@ -335,9 +335,9 @@ export class GameOverScene extends Phaser.Scene {
 
     // Hover color based on button color
     let hoverColor: number;
-    if (color === 0x10B981) hoverColor = 0x14D89A; // Green
-    else if (color === 0xFBBF24) hoverColor = 0xFDE68A; // Light yellow -> lighter yellow
-    else hoverColor = 0x00FFFF; // Cyan
+    if (color === 0x00F5FF) hoverColor = 0x66FFFF; // Primary hover: Lighter Bright Cyan
+    else if (color === 0xF59E0B) hoverColor = 0xFFBF40; // Secondary hover: Lighter Solar Gold
+    else hoverColor = 0x66FFFF; // Default to primary hover
 
     btn.on('pointerover', () => {
       btn.setFillStyle(hoverColor);

@@ -93,7 +93,7 @@ export class LeaderboardScene extends Phaser.Scene {
         y,
         buttonWidth,
         isMobile ? 35 : 40,
-        isActive ? 0x00F5FF : 0x444444
+        isActive ? 0x00F5FF : 0x333333 // Tertiary: filled state
       );
       btn.setInteractive({ useHandCursor: true });
 
@@ -103,7 +103,7 @@ export class LeaderboardScene extends Phaser.Scene {
         labels[index],
         {
           fontSize: isMobile ? '12px' : '14px',
-          color: isActive ? '#000000' : '#ffffff',
+          color: isActive ? '#000000' : '#00F5FF', // Tertiary text: Bright Cyan
           fontFamily: 'Arial, sans-serif',
           fontStyle: 'bold'
         }
@@ -116,13 +116,13 @@ export class LeaderboardScene extends Phaser.Scene {
 
       btn.on('pointerover', () => {
         if (!isActive) {
-          btn.setFillStyle(0x666666);
+          btn.setFillStyle(0x444444); // Tertiary hover: slightly lighter
         }
       });
 
       btn.on('pointerout', () => {
         if (!isActive) {
-          btn.setFillStyle(0x444444);
+          btn.setFillStyle(0x333333); // Tertiary normal
         }
       });
     });
@@ -294,7 +294,7 @@ export class LeaderboardScene extends Phaser.Scene {
       const buttonY1 = screenHeight - shelfHeight + topPadding + btnHeight / 2 - bottomSafeArea;
       const buttonY2 = buttonY1 + btnHeight + gap;
 
-      // Play Again button
+      // Play Again button (Primary action)
       this.createButton(
         centerX,
         buttonY1,
@@ -304,19 +304,19 @@ export class LeaderboardScene extends Phaser.Scene {
           progressManager.startNewGame();
           this.scene.start('GameScene');
         },
-        0x00F5FF, // Cyan
+        0x00F5FF, // Primary: Bright Cyan
         screenWidth - 32,
         btnHeight,
         true
       );
 
-      // Home button (light yellow)
+      // Home button (Secondary action)
       this.createButton(
         centerX,
         buttonY2,
         'Home',
         () => window.location.href = '/',
-        0xFBBF24, // Light yellow
+        0xF59E0B, // Secondary: Solar Gold
         screenWidth - 32,
         btnHeight,
         true
@@ -326,7 +326,7 @@ export class LeaderboardScene extends Phaser.Scene {
       const buttonY = screenHeight - 60;
       const buttonSpacing = 120;
 
-      // Play Again button
+      // Play Again button (Primary action)
       this.createButton(
         centerX - buttonSpacing,
         buttonY,
@@ -336,19 +336,19 @@ export class LeaderboardScene extends Phaser.Scene {
           progressManager.startNewGame();
           this.scene.start('GameScene');
         },
-        0x00F5FF, // Cyan
+        0x00F5FF, // Primary: Bright Cyan
         200,
         50,
         false
       );
 
-      // Home button (light yellow)
+      // Home button (Secondary action)
       this.createButton(
         centerX + buttonSpacing,
         buttonY,
         'Home',
         () => window.location.href = '/',
-        0xFBBF24, // Light yellow
+        0xF59E0B, // Secondary: Solar Gold
         200,
         50,
         false
@@ -387,8 +387,9 @@ export class LeaderboardScene extends Phaser.Scene {
 
     // Hover colors
     let hoverColor: number;
-    if (color === 0xFBBF24) hoverColor = 0xFDE68A; // Light yellow
-    else hoverColor = 0x00FFFF; // Cyan
+    if (color === 0x00F5FF) hoverColor = 0x66FFFF; // Primary hover: Lighter Bright Cyan
+    else if (color === 0xF59E0B) hoverColor = 0xFFBF40; // Secondary hover: Lighter Solar Gold
+    else hoverColor = 0x66FFFF; // Default to primary hover
 
     btn.on('pointerover', () => {
       btn.setFillStyle(hoverColor);

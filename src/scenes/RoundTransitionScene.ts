@@ -175,45 +175,45 @@ export class RoundTransitionScene extends Phaser.Scene {
         const buttonY1 = screenHeight - shelfHeight + topPadding + btnHeight / 2 - bottomSafeArea;
         const buttonY2 = buttonY1 + btnHeight + gap;
 
-        // Visit Shop button (green) - full width
+        // Visit Shop button (Secondary action) - full width
         this.createButton(
           centerX,
           buttonY1,
           'Visit Shop',
           () => this.scene.start('ShopScene'),
-          0x10B981, // Spacey green
+          0xF59E0B, // Secondary: Solar Gold
           true // sticky
         );
 
-        // Skip to Next Round button (cyan) - full width
+        // Skip to Next Round button (Primary action) - full width
         this.createButton(
           centerX,
           buttonY2,
           'Skip to Next Round',
           () => this.scene.start('GameScene'),
-          0x00F5FF, // Cyan
+          0x00F5FF, // Primary: Bright Cyan
           true // sticky
         );
       } else {
         // Desktop: Two buttons side by side
         const buttonSpacing = 120;
 
-        // Visit Shop button (green)
+        // Visit Shop button (Secondary action)
         this.createButton(
           centerX - buttonSpacing,
           currentY,
           'Visit Shop',
           () => this.scene.start('ShopScene'),
-          0x10B981 // Spacey green
+          0xF59E0B // Secondary: Solar Gold
         );
 
-        // Skip to Next Round button (cyan)
+        // Skip to Next Round button (Primary action)
         this.createButton(
           centerX + buttonSpacing,
           currentY,
           'Skip Shop',
           () => this.scene.start('GameScene'),
-          0x00F5FF // Cyan
+          0x00F5FF // Primary: Bright Cyan
         );
       }
     } else {
@@ -243,7 +243,7 @@ export class RoundTransitionScene extends Phaser.Scene {
       btnText.setOrigin(0.5, 0.5);
 
       continueBtn.on('pointerover', () => {
-        continueBtn.setFillStyle(0x00FFFF);
+        continueBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
         this.tweens.add({
           targets: continueBtn,
           scaleX: 1.05,
@@ -253,7 +253,7 @@ export class RoundTransitionScene extends Phaser.Scene {
       });
 
       continueBtn.on('pointerout', () => {
-        continueBtn.setFillStyle(0x00F5FF);
+        continueBtn.setFillStyle(0x00F5FF); // Primary: Bright Cyan
         continueBtn.setScale(1);
       });
 
@@ -462,11 +462,11 @@ export class RoundTransitionScene extends Phaser.Scene {
     // Define hover colors based on button color
     let hoverColor: number;
     if (color === 0x00F5FF) {
-      // Cyan button - much brighter white hover
-      hoverColor = 0xFFFFFF;
-    } else if (color === 0x10B981) {
-      // Green button - lighter green hover
-      hoverColor = 0x14D89A;
+      // Primary hover: Lighter Bright Cyan
+      hoverColor = 0x66FFFF;
+    } else if (color === 0xF59E0B) {
+      // Secondary hover: Lighter Solar Gold
+      hoverColor = 0xFFBF40;
     } else {
       // Default: slightly lighter
       hoverColor = Math.min(color + 0x303030, 0xFFFFFF);

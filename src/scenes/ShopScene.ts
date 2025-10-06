@@ -360,7 +360,7 @@ export class ShopScene extends Phaser.Scene {
       costText.setOrigin(0.5, 0.5);
 
       // Button below cost
-      const btnColor = canAfford ? 0x10B981 : 0x666666;
+      const btnColor = canAfford ? 0x00F5FF : 0x666666; // Primary: Bright Cyan when affordable
       const purchaseBtn = this.add.rectangle(centerX + btnXOffset, y + 5, btnWidth, btnHeight, btnColor);
 
       const btnText = this.add.text(
@@ -380,7 +380,7 @@ export class ShopScene extends Phaser.Scene {
         purchaseBtn.setInteractive({ useHandCursor: true });
 
         purchaseBtn.on('pointerover', () => {
-          purchaseBtn.setFillStyle(0x14D89A);
+          purchaseBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
           this.tweens.add({
             targets: purchaseBtn,
             scaleX: 1.1,
@@ -390,7 +390,7 @@ export class ShopScene extends Phaser.Scene {
         });
 
         purchaseBtn.on('pointerout', () => {
-          purchaseBtn.setFillStyle(0x10B981);
+          purchaseBtn.setFillStyle(0x00F5FF); // Primary: Bright Cyan
           purchaseBtn.setScale(1);
         });
 
@@ -416,8 +416,8 @@ export class ShopScene extends Phaser.Scene {
       );
       costText.setOrigin(1, 0.5);
 
-      // Purchase button (green color #10B981)
-      const btnColor = canAfford ? 0x10B981 : 0x666666;
+      // Purchase button
+      const btnColor = canAfford ? 0x00F5FF : 0x666666; // Primary: Bright Cyan when affordable
         const purchaseBtn = this.add.rectangle(centerX + btnXOffset, y, btnWidth, btnHeight, btnColor);
       const btnText = this.add.text(
         centerX + btnXOffset,
@@ -436,7 +436,7 @@ export class ShopScene extends Phaser.Scene {
         purchaseBtn.setInteractive({ useHandCursor: true });
 
         purchaseBtn.on('pointerover', () => {
-          purchaseBtn.setFillStyle(0x14D89A); // Lighter green
+          purchaseBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
           this.tweens.add({
             targets: purchaseBtn,
             scaleX: 1.1,
@@ -446,7 +446,7 @@ export class ShopScene extends Phaser.Scene {
         });
 
         purchaseBtn.on('pointerout', () => {
-          purchaseBtn.setFillStyle(0x10B981); // Original green
+          purchaseBtn.setFillStyle(0x00F5FF); // Primary: Bright Cyan
           purchaseBtn.setScale(1);
         });
 
@@ -564,7 +564,7 @@ export class ShopScene extends Phaser.Scene {
 
     // Button hover effect
     continueBtn.on('pointerover', () => {
-      continueBtn.setFillStyle(0x00FFFF);
+      continueBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
       this.tweens.add({
         targets: continueBtn,
         scaleX: 1.05,
@@ -633,7 +633,7 @@ export class ShopScene extends Phaser.Scene {
       });
 
       prevBtn.on('pointerover', () => {
-        prevBtn.setFillStyle(0x00FFFF);
+        prevBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
       });
 
       prevBtn.on('pointerout', () => {
@@ -660,7 +660,7 @@ export class ShopScene extends Phaser.Scene {
       });
 
       nextBtn.on('pointerover', () => {
-        nextBtn.setFillStyle(0x00FFFF);
+        nextBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
       });
 
       nextBtn.on('pointerout', () => {

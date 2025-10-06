@@ -62,6 +62,11 @@ export class NameEntryScene extends Phaser.Scene {
       }
     ).setOrigin(0.5);
 
+    // Hide the text display on mobile since we use HTML input
+    if (isMobile) {
+      this.nameText.setVisible(false);
+    }
+
     // Instructions
     this.add.text(
       centerX,
@@ -167,7 +172,7 @@ export class NameEntryScene extends Phaser.Scene {
     const btnWidth = isMobile ? 200 : 200;
     const btnHeight = isMobile ? 50 : 60;
 
-    const btn = this.add.rectangle(x, y, btnWidth, btnHeight, 0x10B981);
+    const btn = this.add.rectangle(x, y, btnWidth, btnHeight, 0x00F5FF); // Primary: Bright Cyan
     btn.setInteractive({ useHandCursor: true });
 
     const btnText = this.add.text(
@@ -184,7 +189,7 @@ export class NameEntryScene extends Phaser.Scene {
     btnText.setOrigin(0.5);
 
     btn.on('pointerover', () => {
-      btn.setFillStyle(0x14D89A);
+      btn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
       this.tweens.add({
         targets: btn,
         scaleX: 1.05,
@@ -194,7 +199,7 @@ export class NameEntryScene extends Phaser.Scene {
     });
 
     btn.on('pointerout', () => {
-      btn.setFillStyle(0x10B981);
+      btn.setFillStyle(0x00F5FF); // Primary: Bright Cyan
       btn.setScale(1);
     });
 
