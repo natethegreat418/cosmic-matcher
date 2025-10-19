@@ -11,7 +11,7 @@ import { getGameSceneLayout, isMobile } from '../config/ResponsiveConfig';
  */
 export class GameState {
   private score: number = 0;
-  private timeRemaining: number = 60; // Always displays as 60 seconds
+  private timeRemaining: number = 60; // 60 in production, configurable in dev (initialized from GameProgressManager)
   private actualTimeElapsed: number = 0; // Tracks real time for speed multiplier
   private currentCombo: number = 0;
   private highestCombo: number = 0;
@@ -44,7 +44,7 @@ export class GameState {
     this.speedMultiplier = progressManager.getTimerSpeedMultiplier();
 
     // Apply time bonus upgrades to base timer
-    const baseTime = progressManager.getRoundTimer(); // 60 seconds
+    const baseTime = progressManager.getRoundTimer(); // 60 in production, configurable in dev
     this.timeRemaining = upgradeManager.applyTimeBonus(baseTime);
 
     // Consume the time upgrades after applying them (one-time use per round)

@@ -40,7 +40,9 @@ src/
   │   ├── GameProgressManager.ts     # Multi-round progression & speed scaling
   │   ├── ShopSystem.ts              # Shop inventory & purchase logic
   │   ├── UpgradeManager.ts          # Upgrade effects & calculations
-  │   └── InputManager.ts            # Input state & visual feedback
+  │   ├── InputManager.ts            # Input state & visual feedback
+  │   ├── DevConfig.ts               # Dev-only configuration (dev mode detection)
+  │   └── DevSceneNavigator.ts       # Dev-only scene navigation & debugging tools
   ├── types/
   │   ├── index.ts                   # Core type definitions (tiles, config)
   │   └── Progress.ts                # Progress & shop type definitions
@@ -215,7 +217,7 @@ export class GameProgressManager {
   // Round management
   public completeRound(roundScore: number): RoundResult;
   public getCurrentRound(): number;
-  public getRoundTimer(): number;  // Always 60 seconds
+  public getRoundTimer(): number;  // 60 seconds in production, 15 in dev
   public getTimerSpeedMultiplier(): number;  // 1x to 3x based on round
 
   // Score & points management
@@ -405,6 +407,155 @@ GameOverScene (after Round 10)
    - If a test fails, either fix the code or update the test (if behavior intentionally changed)
 
 **This workflow is NON-NEGOTIABLE and must be followed for every code change, no matter how small.**
+
+### Development Mode & Debugging Tools
+
+**IMPORTANT: All dev features below are ONLY active in local development (`npm run dev`). They are completely disabled in production builds.**
+
+#### Dev Configuration (src/game/DevConfig.ts)
+
+The `DEV_CONFIG` provides enhanced debugging capabilities:
+
+```typescript
+export const DEV_CONFIG = {
+  enabled: import.meta.env.DEV,  // Only true in development
+  startingScore: 5000,            // vs 0 in production
+  timerSeconds: 15,               // vs 60 in production
+}
+```
+
+**Benefits:**
+- **Fast Iteration**: 15-second rounds instead of 60 seconds
+- **Immediate Shop Testing**: Start with 5000 points to test all upgrades
+- **No Impact on Production**: Production builds use normal values (0 points, 60s rounds)
+
+#### Dev Scene Navigation (src/game/DevSceneNavigator.ts)
+
+Direct navigation to any game scene via URL parameters or browser console commands.
+
+**URL Parameters** (Perfect for MCP Chrome DevTools):
+```
+http://localhost:5173?scene=shop&round=7&points=10000&score=15000
+http://localhost:5173?scene=gameover&round=10&upgrades=phase_gun,tractor_beam
+http://localhost:5173?scene=transition&round=5
+http://localhost:5173?scene=game&round=3&points=5000
+```
+
+**Supported Parameters:**
+- `scene` - game | shop | transition | gameover
+- `round` - 1 to 10 (sets current round)
+- `points` - Available points for shop purchases
+- `score` - Total score
+- `upgrades` - Comma-separated upgrade IDs (phase_gun, tractor_beam, bonus_time, time_dilation)
+
+**Browser Console Commands** (Available via `window.debugNav`):
+```javascript
+// Navigate to scenes
+debugNav.goToScene('shop')        // Open shop scene
+debugNav.goToScene('gameover')    // Open game over scene
+debugNav.goToScene('transition')  // Open round transition
+debugNav.goToScene('game')        // Start gameplay
+
+// Manipulate game state
+debugNav.setRound(7)              // Jump to round 7
+debugNav.setPoints(10000)         // Set available points
+debugNav.addPoints(500)           // Add points to current total
+debugNav.setScore(15000)          // Set total score
+debugNav.addUpgrade('phase_gun')  // Grant an upgrade
+
+// Utilities
+debugNav.showState()              // Display current game state
+debugNav.help()                   // Show all available commands
+debugNav.reset()                  // Reset game state and reload
+```
+
+#### UI Verification with MCP Chrome DevTools
+
+**MANDATORY: When making UI changes to any scene, you MUST verify the changes using the MCP Chrome DevTools.**
+
+**Workflow for Scene UI Changes:**
+
+1. **Start dev server**: `npm run dev`
+
+2. **Navigate to the scene** using MCP Chrome DevTools:
+   ```javascript
+   // Example: Verify ShopScene changes at round 5 with points
+   mcp__chrome-devtools__navigate_page({
+     url: 'http://localhost:5173?scene=shop&round=5&points=10000'
+   })
+   ```
+
+3. **Take a snapshot** to verify layout:
+   ```javascript
+   mcp__chrome-devtools__take_snapshot()
+   ```
+
+4. **Take a screenshot** for visual confirmation:
+   ```javascript
+   mcp__chrome-devtools__take_screenshot({
+     fullPage: true
+   })
+   ```
+
+5. **Test interactivity** if needed:
+   ```javascript
+   // Example: Click a shop item
+   mcp__chrome-devtools__click({ uid: 'element-uid-from-snapshot' })
+   ```
+
+6. **Check console for errors**:
+   ```javascript
+   mcp__chrome-devtools__list_console_messages()
+   ```
+
+**Common Scene Navigation URLs for Testing:**
+
+- **GameScene (mid-game)**: `?scene=game&round=5&points=2000`
+- **ShopScene (with funds)**: `?scene=shop&round=3&points=10000`
+- **RoundTransitionScene**: `?scene=transition&round=7&score=8000`
+- **GameOverScene**: `?scene=gameover&round=10&score=50000&upgrades=phase_gun,tractor_beam`
+
+**Mobile Testing:**
+```javascript
+// Resize to mobile viewport
+mcp__chrome-devtools__resize_page({ width: 375, height: 667 })
+
+// Navigate to scene
+mcp__chrome-devtools__navigate_page({
+  url: 'http://localhost:5173?scene=shop&round=5&points=10000'
+})
+
+// Verify mobile layout
+mcp__chrome-devtools__take_screenshot({ fullPage: true })
+```
+
+**Example: Complete UI Verification Flow**
+```javascript
+// 1. Navigate to shop at round 7 with plenty of points
+mcp__chrome-devtools__navigate_page({
+  url: 'http://localhost:5173?scene=shop&round=7&points=15000'
+})
+
+// 2. Wait for scene to load
+mcp__chrome-devtools__wait_for({ text: 'Cosmic Shop' })
+
+// 3. Take snapshot to verify layout
+mcp__chrome-devtools__take_snapshot()
+
+// 4. Take screenshot for visual record
+mcp__chrome-devtools__take_screenshot({ fullPage: true })
+
+// 5. Check for console errors
+mcp__chrome-devtools__list_console_messages()
+```
+
+**When to Use Dev Navigation:**
+- ✅ Testing shop UI changes (need points to see purchase options)
+- ✅ Verifying game over screen (avoid playing 10 full rounds)
+- ✅ Testing round transition layouts at different rounds
+- ✅ Debugging upgrade effects at specific game states
+- ✅ Mobile responsive testing for all scenes
+- ✅ Screenshot documentation of UI states
 
 ### Testing Strategy
 - **Unit Tests**: Focus on pure logic without Phaser dependencies

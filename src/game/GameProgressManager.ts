@@ -2,6 +2,7 @@ import type { GameProgress, RoundResult } from '../types/Progress';
 import type { SavedGameState } from '../types/Storage';
 import { ShopSystem } from './ShopSystem';
 import { LocalStorageManager } from '../services/LocalStorageManager';
+import { DEV_CONFIG } from './DevConfig';
 
 export class GameProgressManager {
   private static instance: GameProgressManager | null = null;
@@ -19,14 +20,15 @@ export class GameProgressManager {
   }
 
   private initializeProgress(): GameProgress {
+    const startingScore = DEV_CONFIG.startingScore;
     return {
       currentRound: 1,
-      totalScore: 0,
+      totalScore: startingScore,
       roundScores: [],
-      availablePoints: 0,
+      availablePoints: startingScore,
       spentPoints: 0,
       ownedUpgrades: [],
-      roundTimer: 60, // Always 60 seconds display, speed changes per round
+      roundTimer: DEV_CONFIG.timerSeconds,
       isComplete: false
     };
   }
@@ -54,7 +56,7 @@ export class GameProgressManager {
       availablePoints: savedState.availablePoints,
       spentPoints: savedState.spentPoints,
       ownedUpgrades: savedState.ownedUpgrades,
-      roundTimer: 60, // Always 60
+      roundTimer: DEV_CONFIG.timerSeconds,
       isComplete: savedState.isComplete
     };
   }
@@ -83,7 +85,7 @@ export class GameProgressManager {
   }
 
   public getRoundTimer(): number {
-    return this.progress.roundTimer; // Always 60
+    return this.progress.roundTimer; // 60 in production, configurable in dev
   }
 
   /**

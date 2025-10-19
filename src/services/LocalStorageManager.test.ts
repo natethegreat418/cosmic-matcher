@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LocalStorageManager } from './LocalStorageManager';
 import { GameProgressManager } from '../game/GameProgressManager';
 import { ShopSystem } from '../game/ShopSystem';
+import { DEV_CONFIG } from '../game/DevConfig';
 
 describe('LocalStorageManager', () => {
   beforeEach(() => {
@@ -29,7 +30,7 @@ describe('LocalStorageManager', () => {
 
       const parsed = JSON.parse(saved!);
       expect(parsed.currentRound).toBe(2);
-      expect(parsed.totalScore).toBe(350); // 500 - 150 (bonus_time cost)
+      expect(parsed.totalScore).toBe(DEV_CONFIG.startingScore + 350); // startingScore + 500 - 150 (bonus_time cost)
       expect(parsed.roundScores).toEqual([500]);
     });
 
@@ -101,7 +102,7 @@ describe('LocalStorageManager', () => {
 
       expect(loaded).not.toBeNull();
       expect(loaded!.currentRound).toBe(2);
-      expect(loaded!.totalScore).toBe(500);
+      expect(loaded!.totalScore).toBe(DEV_CONFIG.startingScore + 500);
       expect(loaded!.roundScores).toEqual([500]);
     });
 
@@ -209,7 +210,7 @@ describe('LocalStorageManager', () => {
 
       // Verify restored state
       expect(newProgressManager.getCurrentRound()).toBe(3);
-      expect(newProgressManager.getTotalScore()).toBe(950); // 500 + 600 - 150
+      expect(newProgressManager.getTotalScore()).toBe(DEV_CONFIG.startingScore + 950); // startingScore + 500 + 600 - 150
       expect(newProgressManager.getRoundScores()).toEqual([500, 600]);
       expect(newProgressManager.getOwnedUpgrades()).toContain('bonus_time');
       expect(newProgressManager.getOwnedUpgrades()).toContain('phase_gun');
