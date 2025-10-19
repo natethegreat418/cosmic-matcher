@@ -126,6 +126,9 @@ export class DevSceneNavigator {
 
     const progressManager = GameProgressManager.getInstance();
 
+    // Always start a new game when navigating directly to a scene
+    progressManager.startNewGame();
+
     // Apply round
     if (state.round !== undefined) {
       this.setRound(state.round);

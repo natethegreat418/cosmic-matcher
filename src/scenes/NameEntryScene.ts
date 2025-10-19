@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 import { GAME_CONFIG } from '../types';
 import { getNameEntryLayout, isMobile } from '../config/ResponsiveConfig';
+import { UIButton } from '../ui/UIButton';
 
 /**
  * Scene for entering player name for leaderboard submission
@@ -166,45 +167,15 @@ export class NameEntryScene extends Phaser.Scene {
   private createSubmitButton(x: number, y: number): void {
     const layout = getNameEntryLayout();
 
-    const btn = this.add.rectangle(
+    UIButton.create(this, {
       x,
       y,
-      layout.submitButton.width,
-      layout.submitButton.height,
-      0x00F5FF
-    );
-    btn.setInteractive({ useHandCursor: true });
-
-    const btnText = this.add.text(
-      x,
-      y,
-      'Submit',
-      {
-        fontSize: layout.submitButton.fontSize,
-        color: '#000000',
-        fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
-      }
-    );
-    btnText.setOrigin(0.5);
-
-    btn.on('pointerover', () => {
-      btn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
-      this.tweens.add({
-        targets: btn,
-        scaleX: 1.05,
-        scaleY: 1.05,
-        duration: 100
-      });
-    });
-
-    btn.on('pointerout', () => {
-      btn.setFillStyle(0x00F5FF); // Primary: Bright Cyan
-      btn.setScale(1);
-    });
-
-    btn.on('pointerdown', () => {
-      this.submitName();
+      width: layout.submitButton.width,
+      height: layout.submitButton.height,
+      text: 'Submit',
+      variant: 'primary',
+      fontSize: layout.submitButton.fontSize,
+      onClick: () => this.submitName()
     });
   }
 

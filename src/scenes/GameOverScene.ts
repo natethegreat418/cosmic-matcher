@@ -2,8 +2,10 @@ import * as Phaser from 'phaser';
 import { GameProgressManager } from '../game/GameProgressManager';
 import { LocalStorageManager } from '../services/LocalStorageManager';
 import { LeaderboardService } from '../services/LeaderboardService';
-import { getCampaignCompleteLayout, isMobile } from '../config/ResponsiveConfig';
+import { getCampaignCompleteLayout, isMobile, getBottomSafeArea } from '../config/ResponsiveConfig';
 import type { ScoreSubmission } from '../types/Leaderboard';
+import { UIButton } from '../ui/UIButton';
+import { UIMobileShelf } from '../ui/UIMobileShelf';
 
 export class GameOverScene extends Phaser.Scene {
   private leaderboardService!: LeaderboardService;
@@ -189,7 +191,7 @@ export class GameOverScene extends Phaser.Scene {
 
     // Leaderboard buttons
     if (mobile) {
-      this.createMobileButtons(centerX);
+      this.createMobileButtons();
     } else {
       this.createDesktopButtons(centerX);
     }
@@ -206,167 +208,72 @@ export class GameOverScene extends Phaser.Scene {
     const btnY = buttons.y || 580;
 
     // Submit to Leaderboard button (Primary action)
-    this.createButton(
-      centerX,
-      btnY,
-      'Submit Score',
-      () => this.promptForName(),
-      0x00F5FF, // Primary: Bright Cyan
-      buttons.buttonWidth || 250,
-      buttons.buttonHeight
-    );
+    UIButton.create(this, {
+      x: centerX,
+      y: btnY,
+      width: buttons.buttonWidth || 250,
+      height: buttons.buttonHeight,
+      text: 'Submit Score',
+      variant: 'primary',
+      fontSize: buttons.fontSize,
+      onClick: () => this.promptForName()
+    });
 
     // View Leaderboard button (Secondary action)
-    this.createButton(
-      centerX,
-      btnY + buttons.buttonHeight + buttons.gap,
-      'Leaderboard',
-      () => this.scene.start('LeaderboardScene'),
-      0xF59E0B, // Secondary: Solar Gold
-      buttons.buttonWidth || 250,
-      buttons.buttonHeight
-    );
+    UIButton.create(this, {
+      x: centerX,
+      y: btnY + buttons.buttonHeight + buttons.gap,
+      width: buttons.buttonWidth || 250,
+      height: buttons.buttonHeight,
+      text: 'Leaderboard',
+      variant: 'secondary',
+      fontSize: buttons.fontSize,
+      onClick: () => this.scene.start('LeaderboardScene')
+    });
 
     // Play again button (Primary action)
-    this.createButton(
-      centerX,
-      btnY + (buttons.buttonHeight + buttons.gap) * 2,
-      'Play Again',
-      () => this.startNewGame(),
-      0x00F5FF, // Primary: Bright Cyan
-      buttons.buttonWidth || 250,
-      buttons.buttonHeight
-    );
+    UIButton.create(this, {
+      x: centerX,
+      y: btnY + (buttons.buttonHeight + buttons.gap) * 2,
+      width: buttons.buttonWidth || 250,
+      height: buttons.buttonHeight,
+      text: 'Play Again',
+      variant: 'primary',
+      fontSize: buttons.fontSize,
+      onClick: () => this.startNewGame()
+    });
   }
 
-  private createMobileButtons(centerX: number): void {
-    const screenHeight = this.cameras.main.height;
-    const screenWidth = this.cameras.main.width;
+  private createMobileButtons(): void {
     const layout = getCampaignCompleteLayout();
     const { buttons } = layout;
+    const bottomSafeArea = getBottomSafeArea();
 
-    const bottomSafeArea = layout.buttons.startY ? (screenHeight - layout.buttons.startY) : 140;
-    const shelfHeight = buttons.buttonHeight * 3 + buttons.gap * 2 + 32;
-
-    // Create sticky shelf
-    const shelf = this.add.rectangle(
-      centerX,
-      screenHeight - shelfHeight / 2 - bottomSafeArea + buttons.buttonHeight,
-      screenWidth,
-      shelfHeight,
-      0x1a1a1a
-    );
-    shelf.setScrollFactor(0);
-    shelf.setDepth(1000);
-
-    const border = this.add.rectangle(
-      centerX,
-      screenHeight - shelfHeight - bottomSafeArea + buttons.buttonHeight,
-      screenWidth,
-      1,
-      0x4a4a4a
-    );
-    border.setScrollFactor(0);
-    border.setDepth(1000);
-
-    const topPadding = 16;
-    const buttonY1 = screenHeight - shelfHeight + topPadding + buttons.buttonHeight / 2 - bottomSafeArea + buttons.buttonHeight;
-    const buttonY2 = buttonY1 + buttons.buttonHeight + buttons.gap;
-    const buttonY3 = buttonY2 + buttons.buttonHeight + buttons.gap;
-
-    // Submit button (Primary action)
-    this.createButton(
-      centerX,
-      buttonY1,
-      'Submit to Leaderboard',
-      () => this.promptForName(),
-      0x00F5FF, // Primary: Bright Cyan
-      screenWidth - 32,
-      buttons.buttonHeight,
-      true
-    );
-
-    // Leaderboard button (Secondary action)
-    this.createButton(
-      centerX,
-      buttonY2,
-      'View Leaderboard',
-      () => this.scene.start('LeaderboardScene'),
-      0xF59E0B, // Secondary: Solar Gold
-      screenWidth - 32,
-      buttons.buttonHeight,
-      true
-    );
-
-    // Play again button (Primary action)
-    this.createButton(
-      centerX,
-      buttonY3,
-      'Play Again',
-      () => this.startNewGame(),
-      0x00F5FF, // Primary: Bright Cyan
-      screenWidth - 32,
-      buttons.buttonHeight,
-      true
-    );
-  }
-
-  private createButton(
-    x: number,
-    y: number,
-    text: string,
-    onClick: () => void,
-    color: number,
-    width: number,
-    height: number,
-    sticky: boolean = false
-  ): void {
-    const layout = getCampaignCompleteLayout();
-    const mobile = isMobile();
-
-    const btn = this.add.rectangle(x, y, width, height, color);
-    btn.setInteractive({ useHandCursor: true });
-    if (sticky) {
-      btn.setScrollFactor(0);
-      btn.setDepth(1001);
-    }
-
-    const btnText = this.add.text(x, y, text, {
-      fontSize: layout.buttons.fontSize,
-      color: '#000000',
-      fontFamily: 'Arial, sans-serif',
-      fontStyle: 'bold'
+    UIMobileShelf.create(this, {
+      bottomSafeArea,
+      buttonHeight: buttons.buttonHeight,
+      buttonGap: buttons.gap,
+      buttons: [
+        {
+          text: 'Submit to Leaderboard',
+          variant: 'primary',
+          fontSize: buttons.fontSize,
+          onClick: () => this.promptForName()
+        },
+        {
+          text: 'View Leaderboard',
+          variant: 'secondary',
+          fontSize: buttons.fontSize,
+          onClick: () => this.scene.start('LeaderboardScene')
+        },
+        {
+          text: 'Play Again',
+          variant: 'primary',
+          fontSize: buttons.fontSize,
+          onClick: () => this.startNewGame()
+        }
+      ]
     });
-    btnText.setOrigin(0.5);
-    if (sticky) {
-      btnText.setScrollFactor(0);
-      btnText.setDepth(1002);
-    }
-
-    // Hover color based on button color
-    let hoverColor: number;
-    if (color === 0x00F5FF) hoverColor = 0x66FFFF; // Primary hover: Lighter Bright Cyan
-    else if (color === 0xF59E0B) hoverColor = 0xFFBF40; // Secondary hover: Lighter Solar Gold
-    else hoverColor = 0x66FFFF; // Default to primary hover
-
-    btn.on('pointerover', () => {
-      btn.setFillStyle(hoverColor);
-      if (!mobile) {
-        this.tweens.add({
-          targets: btn,
-          scaleX: 1.05,
-          scaleY: 1.05,
-          duration: 100
-        });
-      }
-    });
-
-    btn.on('pointerout', () => {
-      btn.setFillStyle(color);
-      btn.setScale(1);
-    });
-
-    btn.on('pointerdown', onClick);
   }
 
   private promptForName(): void {

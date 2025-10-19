@@ -3,7 +3,9 @@ import { GameProgressManager } from '../game/GameProgressManager';
 import { LocalStorageManager } from '../services/LocalStorageManager';
 import { GAME_CONFIG } from '../types';
 import type { RoundResult } from '../types/Progress';
-import { getRoundTransitionLayout, isMobile } from '../config/ResponsiveConfig';
+import { getRoundTransitionLayout, isMobile, getBottomSafeArea } from '../config/ResponsiveConfig';
+import { UIButton } from '../ui/UIButton';
+import { UIMobileShelf } from '../ui/UIMobileShelf';
 
 export class RoundTransitionScene extends Phaser.Scene {
   private roundResult?: RoundResult;
@@ -113,57 +115,27 @@ export class RoundTransitionScene extends Phaser.Scene {
       // Buttons positioned using layout config
       if (mobile) {
         // Mobile: Stack buttons vertically in sticky bottom shelf
-        const screenHeight = this.cameras.main.height;
-        const screenWidth = this.cameras.main.width;
-        const btnHeight = layout.buttons.buttonHeight;
-        const bottomSafe = screenHeight - (layout.buttons.startY || 0);
-        const shelfHeight = btnHeight * 2 + layout.buttons.gap + 32;
+        const bottomSafe = getBottomSafeArea();
 
-        // Create sticky shelf background
-        const shelf = this.add.rectangle(
-          centerX,
-          screenHeight - shelfHeight / 2 - bottomSafe + btnHeight,
-          screenWidth,
-          shelfHeight,
-          0x1a1a1a
-        );
-        shelf.setScrollFactor(0);
-        shelf.setDepth(1000);
-
-        // Add top border
-        const border = this.add.rectangle(
-          centerX,
-          screenHeight - shelfHeight - bottomSafe + btnHeight,
-          screenWidth,
-          1,
-          0x4a4a4a
-        );
-        border.setScrollFactor(0);
-        border.setDepth(1000);
-
-        // Button positioning
-        const buttonY1 = layout.buttons.startY || 0;
-        const buttonY2 = buttonY1 + btnHeight + layout.buttons.gap;
-
-        // Visit Shop button (Secondary action)
-        this.createButton(
-          centerX,
-          buttonY1,
-          'Visit Shop',
-          () => this.scene.start('ShopScene'),
-          0xF59E0B,
-          true
-        );
-
-        // Skip to Next Round button (Primary action)
-        this.createButton(
-          centerX,
-          buttonY2,
-          'Skip to Next Round',
-          () => this.scene.start('GameScene'),
-          0x00F5FF,
-          true
-        );
+        UIMobileShelf.create(this, {
+          bottomSafeArea: bottomSafe,
+          buttonHeight: layout.buttons.buttonHeight,
+          buttonGap: layout.buttons.gap,
+          buttons: [
+            {
+              text: 'Visit Shop',
+              variant: 'secondary',
+              fontSize: '20px',
+              onClick: () => this.scene.start('ShopScene')
+            },
+            {
+              text: 'Skip to Next Round',
+              variant: 'primary',
+              fontSize: '20px',
+              onClick: () => this.scene.start('GameScene')
+            }
+          ]
+        });
       } else {
         // Desktop: Two buttons side by side
         const halfGap = layout.buttons.gap / 2;
@@ -171,22 +143,28 @@ export class RoundTransitionScene extends Phaser.Scene {
         const btnY = layout.buttons.y || 400;
 
         // Visit Shop button (Secondary action)
-        this.createButton(
-          centerX - (btnWidth + halfGap) / 2,
-          btnY,
-          'Visit Shop',
-          () => this.scene.start('ShopScene'),
-          0xF59E0B
-        );
+        UIButton.create(this, {
+          x: centerX - (btnWidth + halfGap) / 2,
+          y: btnY,
+          width: 200,
+          height: 56,
+          text: 'Visit Shop',
+          variant: 'secondary',
+          fontSize: '20px',
+          onClick: () => this.scene.start('ShopScene')
+        });
 
         // Skip to Next Round button (Primary action)
-        this.createButton(
-          centerX + (btnWidth + halfGap) / 2,
-          btnY,
-          'Skip Shop',
-          () => this.scene.start('GameScene'),
-          0x00F5FF
-        );
+        UIButton.create(this, {
+          x: centerX + (btnWidth + halfGap) / 2,
+          y: btnY,
+          width: 200,
+          height: 56,
+          text: 'Skip Shop',
+          variant: 'primary',
+          fontSize: '20px',
+          onClick: () => this.scene.start('GameScene')
+        });
       }
     } else {
       // Game complete - single button to view results
@@ -194,45 +172,15 @@ export class RoundTransitionScene extends Phaser.Scene {
       const btnHeight = mobile ? 50 : 60;
       const buttonY = mobile ? (layout.buttons.startY || 400) : (layout.buttons.y || 400);
 
-      const continueBtn = this.add.rectangle(
-        centerX,
-        buttonY,
-        btnWidth,
-        btnHeight,
-        0x00F5FF
-      );
-      continueBtn.setInteractive({ useHandCursor: true });
-
-      const btnText = this.add.text(
-        centerX,
-        buttonY,
-        'View Results',
-        {
-          fontSize: layout.buttons.fontSize || '20px',
-          color: '#000000',
-          fontFamily: 'Arial, sans-serif',
-          fontStyle: 'bold'
-        }
-      );
-      btnText.setOrigin(0.5, 0.5);
-
-      continueBtn.on('pointerover', () => {
-        continueBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
-        this.tweens.add({
-          targets: continueBtn,
-          scaleX: 1.05,
-          scaleY: 1.05,
-          duration: 100
-        });
-      });
-
-      continueBtn.on('pointerout', () => {
-        continueBtn.setFillStyle(0x00F5FF); // Primary: Bright Cyan
-        continueBtn.setScale(1);
-      });
-
-      continueBtn.on('pointerdown', () => {
-        this.scene.start('GameOverScene');
+      UIButton.create(this, {
+        x: centerX,
+        y: buttonY,
+        width: btnWidth,
+        height: btnHeight,
+        text: 'View Results',
+        variant: 'primary',
+        fontSize: layout.buttons.fontSize || '20px',
+        onClick: () => this.scene.start('GameOverScene')
       });
     }
   }
@@ -386,63 +334,5 @@ export class RoundTransitionScene extends Phaser.Scene {
 
     // Go to game over scene
     this.scene.start('GameOverScene');
-  }
-
-  private createButton(x: number, y: number, text: string, onClick: () => void, color: number = 0x00F5FF, sticky: boolean = false): void {
-    const isMobile = GAME_CONFIG.IS_MOBILE;
-    const screenWidth = this.cameras.main.width;
-    const btnWidth = (isMobile && sticky) ? screenWidth - 32 : 200; // Full width - padding on mobile sticky
-    const btnHeight = 56; // h-14 (56px) per spec
-    const btnFontSize = '20px'; // text-xl per spec
-
-    const btn = this.add.rectangle(x, y, btnWidth, btnHeight, color);
-    btn.setInteractive({ useHandCursor: true });
-    if (sticky) {
-      btn.setScrollFactor(0);
-      btn.setDepth(1001);
-    }
-
-    const btnText = this.add.text(x, y, text, {
-      fontSize: btnFontSize,
-      color: '#000000',
-      fontFamily: 'Arial, sans-serif',
-      fontStyle: 'bold'
-    });
-    btnText.setOrigin(0.5, 0.5);
-    if (sticky) {
-      btnText.setScrollFactor(0);
-      btnText.setDepth(1002);
-    }
-
-    // Define hover colors based on button color
-    let hoverColor: number;
-    if (color === 0x00F5FF) {
-      // Primary hover: Lighter Bright Cyan
-      hoverColor = 0x66FFFF;
-    } else if (color === 0xF59E0B) {
-      // Secondary hover: Lighter Solar Gold
-      hoverColor = 0xFFBF40;
-    } else {
-      // Default: slightly lighter
-      hoverColor = Math.min(color + 0x303030, 0xFFFFFF);
-    }
-
-    // Button hover effect
-    btn.on('pointerover', () => {
-      btn.setFillStyle(hoverColor);
-      this.tweens.add({
-        targets: btn,
-        scaleX: 1.05,
-        scaleY: 1.05,
-        duration: 100
-      });
-    });
-
-    btn.on('pointerout', () => {
-      btn.setFillStyle(color);
-      btn.setScale(1);
-    });
-
-    btn.on('pointerdown', onClick);
   }
 }

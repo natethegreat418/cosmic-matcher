@@ -4,7 +4,9 @@ import { ShopSystem } from '../game/ShopSystem';
 import { LocalStorageManager } from '../services/LocalStorageManager';
 import { GAME_CONFIG } from '../types';
 import type { ShopItem } from '../types/Progress';
-import { getShopLayout, isMobile } from '../config/ResponsiveConfig';
+import { getShopLayout, isMobile, getBottomSafeArea } from '../config/ResponsiveConfig';
+import { UIButton } from '../ui/UIButton';
+import { UIMobileShelf } from '../ui/UIMobileShelf';
 
 export class ShopScene extends Phaser.Scene {
   private shopSystem!: ShopSystem;
@@ -316,44 +318,17 @@ export class ShopScene extends Phaser.Scene {
       costText.setOrigin(0.5, 0.5);
 
       // Button below cost - positioned lower
-      const btnColor = canAfford ? 0x00F5FF : 0x666666;
-      const purchaseBtn = this.add.rectangle(centerX + btnXOffset, y + 12, btnWidth, btnHeight, btnColor);
-
-      const btnText = this.add.text(
-        centerX + btnXOffset,
-        y + 12,
-        'BUY',
-        {
-          fontSize: cards.buttonFontSize,
-          color: '#000000',
-          fontFamily: 'Arial, sans-serif',
-          fontStyle: cards.buttonFontWeight
-        }
-      );
-      btnText.setOrigin(0.5, 0.5);
-
-      if (canAfford) {
-        purchaseBtn.setInteractive({ useHandCursor: true });
-
-        purchaseBtn.on('pointerover', () => {
-          purchaseBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
-          this.tweens.add({
-            targets: purchaseBtn,
-            scaleX: 1.1,
-            scaleY: 1.1,
-            duration: 100
-          });
-        });
-
-        purchaseBtn.on('pointerout', () => {
-          purchaseBtn.setFillStyle(0x00F5FF); // Primary: Bright Cyan
-          purchaseBtn.setScale(1);
-        });
-
-        purchaseBtn.on('pointerdown', () => {
-          this.purchaseItem(item.id);
-        });
-      }
+      UIButton.create(this, {
+        x: centerX + btnXOffset,
+        y: y + 12,
+        width: btnWidth,
+        height: btnHeight,
+        text: 'BUY',
+        variant: canAfford ? 'primary' : 'disabled',
+        fontSize: cards.buttonFontSize,
+        enabled: canAfford,
+        onClick: () => this.purchaseItem(item.id)
+      });
     } else {
       // Desktop: original layout with cost to the left of button
       const btnXOffset = 280;
@@ -373,43 +348,17 @@ export class ShopScene extends Phaser.Scene {
       costText.setOrigin(1, 0.5);
 
       // Purchase button
-      const btnColor = canAfford ? 0x00F5FF : 0x666666;
-      const purchaseBtn = this.add.rectangle(centerX + btnXOffset, y, btnWidth, btnHeight, btnColor);
-      const btnText = this.add.text(
-        centerX + btnXOffset,
-        y,
-        'BUY',
-        {
-          fontSize: cards.buttonFontSize,
-          color: '#000000',
-          fontFamily: 'Arial, sans-serif',
-          fontStyle: cards.buttonFontWeight
-        }
-      );
-      btnText.setOrigin(0.5, 0.5);
-
-      if (canAfford) {
-        purchaseBtn.setInteractive({ useHandCursor: true });
-
-        purchaseBtn.on('pointerover', () => {
-          purchaseBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
-          this.tweens.add({
-            targets: purchaseBtn,
-            scaleX: 1.1,
-            scaleY: 1.1,
-            duration: 100
-          });
-        });
-
-        purchaseBtn.on('pointerout', () => {
-          purchaseBtn.setFillStyle(0x00F5FF); // Primary: Bright Cyan
-          purchaseBtn.setScale(1);
-        });
-
-        purchaseBtn.on('pointerdown', () => {
-          this.purchaseItem(item.id);
-        });
-      }
+      UIButton.create(this, {
+        x: centerX + btnXOffset,
+        y: y,
+        width: btnWidth,
+        height: btnHeight,
+        text: 'BUY',
+        variant: canAfford ? 'primary' : 'disabled',
+        fontSize: cards.buttonFontSize,
+        enabled: canAfford,
+        onClick: () => this.purchaseItem(item.id)
+      });
     }
   }
 
@@ -466,76 +415,34 @@ export class ShopScene extends Phaser.Scene {
     // Position button using layout config
     const buttonY = layout.bottomButton.y;
 
-    // Create sticky shelf background for mobile
+    // Create sticky shelf with button for mobile, or standalone button for desktop
     if (mobile) {
-      const shelfHeight = btnHeight + 40;
-      const shelfY = buttonY - btnHeight / 2 - 20;
+      const bottomSafe = getBottomSafeArea();
 
-      const shelf = this.add.rectangle(
-        centerX,
-        shelfY + shelfHeight / 2,
-        screenWidth,
-        shelfHeight,
-        0x1a1a1a
-      );
-      shelf.setScrollFactor(0);
-      shelf.setDepth(1000);
-
-      // Add top border
-      const border = this.add.rectangle(
-        centerX,
-        shelfY,
-        screenWidth,
-        2,
-        0x4a4a4a
-      );
-      border.setScrollFactor(0);
-      border.setDepth(1000);
-    }
-
-    const continueBtn = this.add.rectangle(centerX, buttonY, btnWidth, btnHeight, 0x00F5FF);
-    continueBtn.setInteractive({ useHandCursor: true });
-    if (mobile) {
-      continueBtn.setScrollFactor(0);
-      continueBtn.setDepth(1001);
-    }
-
-    const btnText = this.add.text(
-      centerX,
-      buttonY,
-      'Start Next Round',
-      {
-        fontSize: btnFontSize,
-        color: '#000000',
-        fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
-      }
-    );
-    btnText.setOrigin(0.5, 0.5);
-    if (mobile) {
-      btnText.setScrollFactor(0);
-      btnText.setDepth(1002);
-    }
-
-    // Button hover effect
-    continueBtn.on('pointerover', () => {
-      continueBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
-      this.tweens.add({
-        targets: continueBtn,
-        scaleX: 1.05,
-        scaleY: 1.05,
-        duration: 100
+      UIMobileShelf.create(this, {
+        bottomSafeArea: bottomSafe,
+        buttonHeight: btnHeight,
+        buttons: [
+          {
+            text: 'Start Next Round',
+            variant: 'primary',
+            fontSize: btnFontSize,
+            onClick: () => this.startNextRound()
+          }
+        ]
       });
-    });
-
-    continueBtn.on('pointerout', () => {
-      continueBtn.setFillStyle(0x00F5FF);
-      continueBtn.setScale(1);
-    });
-
-    continueBtn.on('pointerdown', () => {
-      this.startNextRound();
-    });
+    } else {
+      UIButton.create(this, {
+        x: centerX,
+        y: buttonY,
+        width: btnWidth,
+        height: btnHeight,
+        text: 'Start Next Round',
+        variant: 'primary',
+        fontSize: btnFontSize,
+        onClick: () => this.startNextRound()
+      });
+    }
   }
 
   private startNextRound(): void {
@@ -571,55 +478,35 @@ export class ShopScene extends Phaser.Scene {
 
     // Previous button
     if (this.currentPage > 0) {
-      const prevBtn = this.add.rectangle(centerX - 120, y, buttonSize, buttonSize, 0x00F5FF);
-      prevBtn.setInteractive({ useHandCursor: true });
-
-      const prevText = this.add.text(centerX - 120, y, '◀', {
-        fontSize: '16px', // Smaller arrow
-        color: '#000000',
-        fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
-      });
-      prevText.setOrigin(0.5, 0.5);
-
-      prevBtn.on('pointerdown', () => {
-        this.currentPage--;
-        this.refreshShopDisplay();
-      });
-
-      prevBtn.on('pointerover', () => {
-        prevBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
-      });
-
-      prevBtn.on('pointerout', () => {
-        prevBtn.setFillStyle(0x00F5FF);
+      UIButton.create(this, {
+        x: centerX - 120,
+        y: y,
+        width: buttonSize,
+        height: buttonSize,
+        text: '◀',
+        variant: 'primary',
+        fontSize: '16px',
+        onClick: () => {
+          this.currentPage--;
+          this.refreshShopDisplay();
+        }
       });
     }
 
     // Next button
     if (this.currentPage < totalPages - 1) {
-      const nextBtn = this.add.rectangle(centerX + 120, y, buttonSize, buttonSize, 0x00F5FF);
-      nextBtn.setInteractive({ useHandCursor: true });
-
-      const nextText = this.add.text(centerX + 120, y, '▶', {
-        fontSize: '16px', // Smaller arrow
-        color: '#000000',
-        fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
-      });
-      nextText.setOrigin(0.5, 0.5);
-
-      nextBtn.on('pointerdown', () => {
-        this.currentPage++;
-        this.refreshShopDisplay();
-      });
-
-      nextBtn.on('pointerover', () => {
-        nextBtn.setFillStyle(0x66FFFF); // Primary hover: Lighter Bright Cyan
-      });
-
-      nextBtn.on('pointerout', () => {
-        nextBtn.setFillStyle(0x00F5FF);
+      UIButton.create(this, {
+        x: centerX + 120,
+        y: y,
+        width: buttonSize,
+        height: buttonSize,
+        text: '▶',
+        variant: 'primary',
+        fontSize: '16px',
+        onClick: () => {
+          this.currentPage++;
+          this.refreshShopDisplay();
+        }
       });
     }
 

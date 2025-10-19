@@ -2,7 +2,9 @@ import * as Phaser from 'phaser';
 import { LeaderboardService } from '../services/LeaderboardService';
 import { GameProgressManager } from '../game/GameProgressManager';
 import type { LeaderboardEntry, LeaderboardFilter } from '../types/Leaderboard';
-import { getLeaderboardLayout, isMobile } from '../config/ResponsiveConfig';
+import { getLeaderboardLayout, isMobile, getBottomSafeArea } from '../config/ResponsiveConfig';
+import { UIButton } from '../ui/UIButton';
+import { UIMobileShelf } from '../ui/UIMobileShelf';
 
 /**
  * Scene for displaying the leaderboard
@@ -257,147 +259,67 @@ export class LeaderboardScene extends Phaser.Scene {
   }
 
   private createBackButton(mobile: boolean): void {
-    const screenHeight = this.cameras.main.height;
     const screenWidth = this.cameras.main.width;
     const centerX = screenWidth / 2;
     const layout = getLeaderboardLayout();
 
     if (mobile) {
       const { bottomButtons } = layout;
-      const bottomSafe = screenHeight - bottomButtons.y; // Distance from buttonY to bottom
-      const shelfHeight = bottomButtons.buttonHeight * 2 + bottomButtons.gap + 32;
-      const shelfY = screenHeight - shelfHeight / 2 - bottomSafe;
+      const bottomSafe = getBottomSafeArea();
 
-      // Create sticky shelf background
-      const shelf = this.add.rectangle(
-        centerX,
-        shelfY,
-        screenWidth,
-        shelfHeight,
-        0x1a1a1a
-      );
-      shelf.setScrollFactor(0);
-      shelf.setDepth(1000);
-
-      // Add top border
-      const border = this.add.rectangle(
-        centerX,
-        shelfY - shelfHeight / 2,
-        screenWidth,
-        1,
-        0x4a4a4a
-      );
-      border.setScrollFactor(0);
-      border.setDepth(1000);
-
-      const topPadding = 16;
-      const buttonY1 = shelfY - shelfHeight / 2 + topPadding + bottomButtons.buttonHeight / 2;
-      const buttonY2 = buttonY1 + bottomButtons.buttonHeight + bottomButtons.gap;
-
-      // Play Again button
-      this.createButton(
-        centerX,
-        buttonY1,
-        'Play Again',
-        () => {
-          const progressManager = GameProgressManager.getInstance();
-          progressManager.startNewGame();
-          this.scene.start('GameScene');
-        },
-        0x00F5FF,
-        screenWidth - 32,
-        bottomButtons.buttonHeight,
-        true
-      );
-
-      // Home button
-      this.createButton(
-        centerX,
-        buttonY2,
-        'Home',
-        () => window.location.href = '/',
-        0xF59E0B,
-        screenWidth - 32,
-        bottomButtons.buttonHeight,
-        true
-      );
+      UIMobileShelf.create(this, {
+        bottomSafeArea: bottomSafe,
+        buttonHeight: bottomButtons.buttonHeight,
+        buttonGap: bottomButtons.gap,
+        buttons: [
+          {
+            text: 'Play Again',
+            variant: 'primary',
+            fontSize: bottomButtons.fontSize || '20px',
+            onClick: () => {
+              const progressManager = GameProgressManager.getInstance();
+              progressManager.startNewGame();
+              this.scene.start('GameScene');
+            }
+          },
+          {
+            text: 'Home',
+            variant: 'secondary',
+            fontSize: bottomButtons.fontSize || '20px',
+            onClick: () => window.location.href = '/'
+          }
+        ]
+      });
     } else {
       const { bottomButtons } = layout;
 
       // Play Again button
-      this.createButton(
-        centerX - bottomButtons.buttonWidth! / 2 - bottomButtons.gap / 2,
-        bottomButtons.y,
-        'Play Again',
-        () => {
+      UIButton.create(this, {
+        x: centerX - bottomButtons.buttonWidth! / 2 - bottomButtons.gap / 2,
+        y: bottomButtons.y,
+        width: bottomButtons.buttonWidth!,
+        height: bottomButtons.buttonHeight,
+        text: 'Play Again',
+        variant: 'primary',
+        fontSize: bottomButtons.fontSize || '20px',
+        onClick: () => {
           const progressManager = GameProgressManager.getInstance();
           progressManager.startNewGame();
           this.scene.start('GameScene');
-        },
-        0x00F5FF,
-        bottomButtons.buttonWidth!,
-        bottomButtons.buttonHeight,
-        false
-      );
+        }
+      });
 
       // Home button
-      this.createButton(
-        centerX + bottomButtons.buttonWidth! / 2 + bottomButtons.gap / 2,
-        bottomButtons.y,
-        'Home',
-        () => window.location.href = '/',
-        0xF59E0B,
-        bottomButtons.buttonWidth!,
-        bottomButtons.buttonHeight,
-        false
-      );
+      UIButton.create(this, {
+        x: centerX + bottomButtons.buttonWidth! / 2 + bottomButtons.gap / 2,
+        y: bottomButtons.y,
+        width: bottomButtons.buttonWidth!,
+        height: bottomButtons.buttonHeight,
+        text: 'Home',
+        variant: 'secondary',
+        fontSize: bottomButtons.fontSize || '20px',
+        onClick: () => window.location.href = '/'
+      });
     }
-  }
-
-  private createButton(
-    x: number,
-    y: number,
-    text: string,
-    onClick: () => void,
-    color: number,
-    width: number,
-    height: number,
-    sticky: boolean
-  ): void {
-    const btn = this.add.rectangle(x, y, width, height, color);
-    btn.setInteractive({ useHandCursor: true });
-    if (sticky) {
-      btn.setScrollFactor(0);
-      btn.setDepth(1001);
-    }
-
-    const layout = getLeaderboardLayout();
-    const btnText = this.add.text(x, y, text, {
-      fontSize: layout.bottomButtons.fontSize || '20px',
-      color: '#000000',
-      fontFamily: 'Arial, sans-serif',
-      fontStyle: 'bold'
-    });
-    btnText.setOrigin(0.5);
-    if (sticky) {
-      btnText.setScrollFactor(0);
-      btnText.setDepth(1002);
-    }
-
-    // Hover colors
-    let hoverColor: number;
-    if (color === 0x00F5FF) hoverColor = 0x66FFFF; // Primary hover: Lighter Bright Cyan
-    else if (color === 0xF59E0B) hoverColor = 0xFFBF40; // Secondary hover: Lighter Solar Gold
-    else hoverColor = 0x66FFFF; // Default to primary hover
-
-    btn.on('pointerover', () => {
-      btn.setFillStyle(hoverColor);
-    });
-
-    btn.on('pointerout', () => {
-      btn.setFillStyle(color);
-    });
-
-    btn.on('pointerdown', onClick);
   }
 }

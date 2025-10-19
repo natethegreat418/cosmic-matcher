@@ -200,7 +200,7 @@ export const getLeaderboardLayout = () => {
       entries: {
         startY: 180,
         entryHeight: 80,
-        maxVisible: 7,
+        maxVisible: 3, // Reduced from 7 to prevent overlap with bottom buttons
         paddingVertical: 16,
         paddingHorizontal: 20,
         medalSize: 48,
