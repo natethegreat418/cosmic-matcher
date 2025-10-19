@@ -4,6 +4,7 @@ import { GameState } from '../game/GameState';
 import { GameProgressManager } from '../game/GameProgressManager';
 import { LocalStorageManager } from '../services/LocalStorageManager';
 import { GAME_CONFIG } from '../types';
+import { getGameSceneLayout, isMobile } from '../config/ResponsiveConfig';
 
 export class GameScene extends Phaser.Scene {
   private _grid?: Grid;
@@ -55,70 +56,117 @@ export class GameScene extends Phaser.Scene {
       shipType = 'ship-ludicrous';
     }
 
-    // Responsive font sizes and positioning per design spec
-    const isMobile = GAME_CONFIG.IS_MOBILE;
-    const fontSize = {
-      title: isMobile ? '24px' : '36px', // mobile: text-2xl, desktop: text-4xl
-      subtitle: isMobile ? '16px' : '18px',
-      speed: isMobile ? '16px' : '20px'
-    };
+    // Get responsive layout configuration
+    const layout = getGameSceneLayout();
+    const mobile = isMobile();
 
-    const uiX = GAME_CONFIG.BOARD_OFFSET_X;
-    let currentY = isMobile ? 10 : 32; // Less top padding on mobile
+    if (mobile) {
+      // Mobile layout: header at top
+      const { header } = layout;
 
-    // Round indicator
-    const roundText = this.add.text(
-      uiX,
-      currentY,
-      `Round ${currentRound} / 10`,
-      {
-        fontSize: fontSize.title,
-        color: '#00F5FF',
-        fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
-      }
-    );
-
-    // Calculate position after the text, centered vertically with the text
-    const iconX = uiX + roundText.width + (isMobile ? 20 : 30);
-    const iconY = roundText.y + (roundText.height / 2);
-
-    // Add ship icon after the text (scaled for mobile)
-    const shipIcon = this.add.image(iconX, iconY, shipType);
-    if (isMobile) {
-      shipIcon.setScale(0.71); // Bigger icon on mobile (50px instead of 40px)
-    }
-
-    currentY += roundText.height + (isMobile ? 4 : 32); // Less margin on mobile
-
-    // Speed warning for higher rounds
-    if (speedMultiplier > 1) {
-      this.add.text(
-        uiX,
-        currentY,
-        `(${speedMultiplier}x Speed!)`,
+      // Round indicator (centered at top)
+      const roundText = this.add.text(
+        header.roundText.x,
+        header.roundText.y,
+        `Round ${currentRound} / 10`,
         {
-          fontSize: fontSize.speed,
-          color: speedMultiplier > 2 ? '#EC4899' : '#F59E0B',
+          fontSize: header.roundText.fontSize,
+          color: '#00F5FF',
           fontFamily: 'Arial, sans-serif',
-          fontStyle: 'italic'
+          fontStyle: header.roundText.fontWeight
         }
       );
-      currentY += parseInt(fontSize.speed) + (isMobile ? 2 : 5);
-    }
+      roundText.setOrigin(0.5, 0);
 
-    // Total score display (if not first round)
-    if (currentRound > 1) {
-      this.add.text(
-        uiX,
-        currentY,
-        `Total Score: ${totalScore.toLocaleString()}`,
+      // Add ship icon after the text
+      const iconX = header.roundText.x + roundText.width / 2 + 25;
+      const iconY = header.roundText.y + roundText.height / 2;
+      const shipIcon = this.add.image(iconX, iconY, shipType);
+      shipIcon.setScale(0.5);
+
+      // Speed warning (if applicable)
+      if (speedMultiplier > 1) {
+        const speedText = this.add.text(
+          header.roundText.x,
+          header.roundText.y + parseInt(header.roundText.fontSize) + 4,
+          `(${speedMultiplier}x Speed!)`,
+          {
+            fontSize: '16px',
+            color: speedMultiplier > 2 ? '#EC4899' : '#F59E0B',
+            fontFamily: 'Arial, sans-serif',
+            fontStyle: 'italic'
+          }
+        );
+        speedText.setOrigin(0.5, 0);
+      }
+
+      // Total score display (if not first round)
+      if (currentRound > 1) {
+        const totalScoreText = this.add.text(
+          header.totalScore.x,
+          header.totalScore.y,
+          `Total: ${totalScore.toLocaleString()}`,
+          {
+            fontSize: header.totalScore.fontSize,
+            color: '#F59E0B',
+            fontFamily: 'Arial, sans-serif',
+            fontStyle: header.totalScore.fontWeight
+          }
+        );
+        totalScoreText.setOrigin(0.5, 0);
+      }
+    } else {
+      // Desktop layout: header on left, timer/score on right
+      const { header } = layout;
+
+      // Round indicator with ship (top left)
+      const roundText = this.add.text(
+        header.roundText.x,
+        header.roundText.y,
+        `Round ${currentRound} / 10`,
         {
-          fontSize: fontSize.subtitle,
-          color: '#F59E0B',
-          fontFamily: 'Arial, sans-serif'
+          fontSize: header.roundText.fontSize,
+          color: '#00F5FF',
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: header.roundText.fontWeight
         }
       );
+
+      // Add ship icon after the text
+      const iconX = header.roundText.x + roundText.width + 20;
+      const iconY = header.roundText.y + roundText.height / 2;
+      const shipIcon = this.add.image(iconX, iconY, shipType);
+      shipIcon.setScale(0.6);
+
+      // Speed warning (if applicable)
+      if (speedMultiplier > 1) {
+        this.add.text(
+          header.roundText.x + roundText.width + 85,
+          header.roundText.y + 8,
+          `(${speedMultiplier}x Speed!)`,
+          {
+            fontSize: '18px',
+            color: speedMultiplier > 2 ? '#EC4899' : '#F59E0B',
+            fontFamily: 'Arial, sans-serif',
+            fontStyle: 'italic'
+          }
+        );
+      }
+
+      // Total score display (if not first round)
+      if (currentRound > 1) {
+        this.add.text(
+          header.totalScore.x,
+          header.totalScore.y,
+          `Total Score: ${totalScore.toLocaleString()}`,
+          {
+            fontSize: header.totalScore.fontSize,
+            color: '#F59E0B',
+            fontFamily: 'Arial, sans-serif',
+            fontStyle: header.totalScore.fontWeight
+          }
+        );
+      }
     }
 
     // Initialize game state (creates UI)

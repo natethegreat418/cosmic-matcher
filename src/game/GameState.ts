@@ -3,6 +3,7 @@ import { GameProgressManager } from './GameProgressManager';
 import { UpgradeManager } from './UpgradeManager';
 import { ShopSystem } from './ShopSystem';
 import { GAME_CONFIG, type MatchGroup } from '../types';
+import { getGameSceneLayout, isMobile } from '../config/ResponsiveConfig';
 
 /**
  * Manages the game state including score, timer, combos, and UI updates
@@ -57,152 +58,101 @@ export class GameState {
    * Initializes all UI elements for displaying game state
    */
   private initializeUI(): void {
-    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const mobile = isMobile();
+    const layout = getGameSceneLayout();
     const screenWidth = this.scene.scale.width;
     const screenHeight = this.scene.scale.height;
 
-    // Position UI elements responsively
-    // On mobile: below the grid, on desktop: right side
-    let timerX: number;
-    let scoreX: number;
-    let uiY: number;
+    if (mobile) {
+      // Mobile layout: Timer bottom-left, Score bottom-right
+      const { footer } = layout;
+      if (!footer) throw new Error('Footer layout not defined for mobile');
 
-    if (isMobile) {
-      // Calculate position below the 8x8 grid
-      const gridHeight = (GAME_CONFIG.TILE_SIZE + GAME_CONFIG.TILE_SPACING) * GAME_CONFIG.GRID_HEIGHT;
-      uiY = GAME_CONFIG.BOARD_OFFSET_Y + gridHeight + 15;
-
-      // Timer left-aligned, Score right-aligned
-      timerX = GAME_CONFIG.BOARD_OFFSET_X;
-      const gridWidth = (GAME_CONFIG.TILE_SIZE + GAME_CONFIG.TILE_SPACING) * GAME_CONFIG.GRID_WIDTH;
-      scoreX = GAME_CONFIG.BOARD_OFFSET_X + gridWidth;
-    } else {
-      // Desktop: Position UI in top-right corner of canvas
-      // Grid is centered at 196-704, so position UI at right edge
-      timerX = 750; // Right side of canvas
-      scoreX = 750;
-      uiY = 120;
-    }
-
-    // Responsive font sizes (larger on mobile now that they're below grid)
-    const fontSize = {
-      score: isMobile ? '22px' : '24px',
-      timer: isMobile ? '20px' : '22px',
-      combo: isMobile ? '16px' : '18px',
-      gameOver: isMobile ? '32px' : '48px'
-    };
-
-    if (isMobile) {
-      // Mobile layout: Timer left, Score right on same row
-
-      // Timer display with clock emoji (left aligned)
-      this.scene.add.text(
-        timerX,
-        uiY,
-        '⏱',
-        {
-          fontSize: fontSize.timer,
-          fontFamily: 'Arial, sans-serif'
-        }
-      );
-
+      // Timer display (left aligned)
       this.timerText = this.scene.add.text(
-        timerX + 22,
-        uiY,
+        footer.timer.x,
+        footer.timer.y,
         this.formatTime(this.timeRemaining),
         {
-          fontSize: fontSize.timer,
-          color: '#F59E0B', // Solar Gold color
+          fontSize: footer.timer.fontSize,
+          color: '#00F5FF', // Cyan for timer
           fontFamily: 'Arial, sans-serif',
-          fontStyle: 'bold'
+          fontStyle: footer.timer.fontWeight
         }
       );
 
       // Score display (right aligned)
       this.scoreText = this.scene.add.text(
-        scoreX,
-        uiY,
-        'Score: 0',
+        footer.score.x,
+        footer.score.y,
+        '0',
         {
-          fontSize: fontSize.score,
+          fontSize: footer.score.fontSize,
           color: '#ffffff',
           fontFamily: 'Arial, sans-serif',
-          fontStyle: 'bold'
+          fontStyle: footer.score.fontWeight
         }
       );
-      this.scoreText.setOrigin(1, 0); // Right-align the text
+      this.scoreText.setOrigin(1, 0);
 
-      uiY += parseInt(fontSize.timer) + 8;
-
-      // Combo indicator (hidden initially) - centered below
-      const centerX = GAME_CONFIG.BOARD_OFFSET_X + ((GAME_CONFIG.TILE_SIZE + GAME_CONFIG.TILE_SPACING) * GAME_CONFIG.GRID_WIDTH) / 2;
+      // Combo indicator (hidden initially) - positioned from config
       this.comboText = this.scene.add.text(
-        centerX,
-        uiY,
+        layout.combo!.x,
+        layout.combo!.y,
         '',
         {
-          fontSize: fontSize.combo,
-          color: '#00F5FF', // Bright cyan for combos
+          fontSize: layout.combo!.fontSize,
+          color: '#00F5FF',
           fontFamily: 'Arial, sans-serif',
-          fontStyle: 'italic'
+          fontStyle: layout.combo!.fontWeight
         }
       );
-      this.comboText.setOrigin(0.5, 0); // Center the text
+      this.comboText.setOrigin(0.5, 0);
     } else {
-      // Desktop layout: Score above Timer
+      // Desktop layout: Timer and Score in top-right
+      const { headerRight } = layout;
 
       // Score display
       this.scoreText = this.scene.add.text(
-        scoreX,
-        uiY,
-        'Score: 0',
+        headerRight!.score.x,
+        headerRight!.score.y,
+        '0',
         {
-          fontSize: fontSize.score,
+          fontSize: headerRight!.score.fontSize,
           color: '#ffffff',
           fontFamily: 'Arial, sans-serif',
-          fontStyle: 'bold'
+          fontStyle: headerRight!.score.fontWeight
         }
       );
+      this.scoreText.setOrigin(1, 0);
 
-      uiY += parseInt(fontSize.score) + 10;
-
-      // Timer display with clock emoji
-      this.scene.add.text(
-        timerX - 30,
-        uiY,
-        '⏱',
-        {
-          fontSize: fontSize.timer,
-          fontFamily: 'Arial, sans-serif'
-        }
-      );
-
+      // Timer display
       this.timerText = this.scene.add.text(
-        timerX,
-        uiY,
+        headerRight!.timer.x,
+        headerRight!.timer.y,
         this.formatTime(this.timeRemaining),
         {
-          fontSize: fontSize.timer,
-          color: '#F59E0B', // Solar Gold color
+          fontSize: headerRight!.timer.fontSize,
+          color: '#00F5FF', // Cyan for timer
           fontFamily: 'Arial, sans-serif',
-          fontStyle: 'bold'
+          fontStyle: headerRight!.timer.fontWeight
         }
       );
+      this.timerText.setOrigin(1, 0);
 
-      uiY += parseInt(fontSize.timer) + 10;
-
-      // Combo indicator (hidden initially)
+      // Combo indicator (hidden initially) - positioned from config
       this.comboText = this.scene.add.text(
-        timerX,
-        uiY,
+        layout.combo!.x,
+        layout.combo!.y,
         '',
         {
-          fontSize: fontSize.combo,
-          color: '#00F5FF', // Bright cyan for combos
+          fontSize: layout.combo!.fontSize,
+          color: '#00F5FF',
           fontFamily: 'Arial, sans-serif',
-          fontStyle: 'italic'
+          fontStyle: layout.combo!.fontWeight
         }
       );
+      this.comboText.setOrigin(1, 0); // Right-aligned on desktop
     }
 
     // Game over text (hidden initially) - centered on screen
@@ -211,12 +161,12 @@ export class GameState {
       screenHeight / 2,
       '',
       {
-        fontSize: fontSize.gameOver,
-        color: '#EC4899', // Plasma Pink for emphasis
+        fontSize: mobile ? '32px' : '48px',
+        color: '#EC4899',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: isMobile ? 2 : 4,
+        strokeThickness: mobile ? 2 : 4,
         align: 'center'
       }
     );
@@ -376,7 +326,7 @@ export class GameState {
         if (typeof rawValue === 'number') {
           const value = Math.round(rawValue);
           if (this.scoreText) {
-            this.scoreText.setText(`Score: ${value.toLocaleString()}`);
+            this.scoreText.setText(value.toLocaleString());
           }
         }
       }

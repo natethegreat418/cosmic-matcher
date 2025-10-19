@@ -1,52 +1,17 @@
-// Helper to check if mobile
-const isMobile = () => window.innerWidth < 768;
+import { getGridConfig, isMobile } from '../config/ResponsiveConfig';
 
-// Calculate responsive tile size and layout
-const getTileConfig = () => {
-  const GRID_SIZE = 8;
-  const mobile = isMobile();
-  const TILE_SPACING = mobile ? 2 : 4; // 2px mobile, 4px desktop
-
-  if (mobile) {
-    const screenWidth = Math.min(window.innerWidth, 500);
-    const maxGridWidth = screenWidth - 32; // 16px padding on each side
-    const tileSize = Math.floor((maxGridWidth - ((GRID_SIZE - 1) * TILE_SPACING)) / GRID_SIZE);
-    return {
-      tileSize: Math.min(tileSize, 50), // Cap at 50px for mobile
-      tileBorderRadius: 2, // 2px mobile
-      offsetX: 16, // 16px padding
-      offsetY: 80
-    };
-  }
-
-  // Desktop: Truly center the grid in the canvas
-  // Canvas: 900px, Grid: 508px
-  // Center: (900 - 508) / 2 = 196px
-  const tileSize = 60;
-  const canvasWidth = 900;
-  const gridWidth = (GRID_SIZE * tileSize) + ((GRID_SIZE - 1) * TILE_SPACING);
-  const offsetX = Math.floor((canvasWidth - gridWidth) / 2);
-
-  return {
-    tileSize: tileSize,
-    tileBorderRadius: 6, // 6px desktop
-    offsetX: offsetX,
-    offsetY: 120
-  };
-};
-
-const tileConfig = getTileConfig();
+const gridConfig = getGridConfig();
 
 export const GAME_CONFIG = {
-  GRID_WIDTH: 8,
-  GRID_HEIGHT: 8,
-  TILE_SIZE: tileConfig.tileSize,
-  TILE_SPACING: isMobile() ? 2 : 4, // 2px mobile, 4px desktop
-  TILE_BORDER_RADIUS: tileConfig.tileBorderRadius,
+  GRID_WIDTH: gridConfig.gridSize,
+  GRID_HEIGHT: gridConfig.gridSize,
+  TILE_SIZE: gridConfig.tileSize,
+  TILE_SPACING: gridConfig.tileSpacing,
+  TILE_BORDER_RADIUS: gridConfig.tileBorderRadius,
   COLORS: ['deepSpaceBlue', 'nebulaPurple', 'cosmicTeal', 'solarGold', 'meteorSilver', 'plasmaPink'] as const,
   ANIMATION_DURATION: 300,
-  BOARD_OFFSET_X: tileConfig.offsetX,
-  BOARD_OFFSET_Y: tileConfig.offsetY,
+  BOARD_OFFSET_X: gridConfig.offsetX,
+  BOARD_OFFSET_Y: gridConfig.offsetY,
   IS_MOBILE: isMobile()
 } as const;
 

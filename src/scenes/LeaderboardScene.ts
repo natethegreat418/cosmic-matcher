@@ -1,8 +1,8 @@
 import * as Phaser from 'phaser';
 import { LeaderboardService } from '../services/LeaderboardService';
 import { GameProgressManager } from '../game/GameProgressManager';
-import { GAME_CONFIG } from '../types';
 import type { LeaderboardEntry, LeaderboardFilter } from '../types/Leaderboard';
+import { getLeaderboardLayout, isMobile } from '../config/ResponsiveConfig';
 
 /**
  * Scene for displaying the leaderboard
@@ -24,41 +24,36 @@ export class LeaderboardScene extends Phaser.Scene {
 
   create(): void {
     const centerX = this.cameras.main.width / 2;
-    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const mobile = isMobile();
+    const layout = getLeaderboardLayout();
 
     this.cameras.main.setBackgroundColor('#2a2a2a');
-
-    let currentY = isMobile ? 20 : 40;
 
     // Title
     this.add.text(
       centerX,
-      currentY,
+      layout.header.y,
       '🏆 LEADERBOARD 🏆',
       {
-        fontSize: isMobile ? '32px' : '48px',
+        fontSize: layout.header.fontSize,
         color: '#F59E0B',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: isMobile ? 2 : 3
+        strokeThickness: mobile ? 2 : 3
       }
     ).setOrigin(0.5);
 
-    currentY += isMobile ? 60 : 80;
-
     // Filter buttons
-    this.createFilterButtons(centerX, currentY);
-
-    currentY += isMobile ? 60 : 80;
+    this.createFilterButtons(centerX, layout.tabs.y);
 
     // Loading text
     this.loadingText = this.add.text(
       centerX,
-      currentY + 100,
+      layout.entries.startY + 100,
       'Loading...',
       {
-        fontSize: isMobile ? '18px' : '20px',
+        fontSize: mobile ? '18px' : '20px',
         color: '#cccccc',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'italic'
@@ -66,21 +61,24 @@ export class LeaderboardScene extends Phaser.Scene {
     ).setOrigin(0.5);
 
     // Container for leaderboard entries
-    this.entryContainer = this.add.container(0, currentY);
+    this.entryContainer = this.add.container(0, layout.entries.startY);
 
     // Back button
-    this.createBackButton(isMobile);
+    this.createBackButton(mobile);
 
     // Load initial data
     this.loadLeaderboard();
   }
 
   private createFilterButtons(centerX: number, y: number): void {
-    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const mobile = isMobile();
+    const layout = getLeaderboardLayout();
     const filters: LeaderboardFilter[] = ['all-time', 'this-week', 'today'];
     const labels = ['All Time', 'This Week', 'Today'];
-    const buttonWidth = isMobile ? 90 : 120;
-    const gap = isMobile ? 8 : 16;
+
+    const buttonWidth = mobile ? 90 : (layout.tabs.buttonWidth || 120);
+    const buttonHeight = layout.tabs.buttonHeight;
+    const gap = layout.tabs.gap;
     const totalWidth = (buttonWidth * 3) + (gap * 2);
     const startX = centerX - totalWidth / 2 + buttonWidth / 2;
 
@@ -92,8 +90,8 @@ export class LeaderboardScene extends Phaser.Scene {
         x,
         y,
         buttonWidth,
-        isMobile ? 35 : 40,
-        isActive ? 0x00F5FF : 0x333333 // Tertiary: filled state
+        buttonHeight,
+        isActive ? 0x00F5FF : 0x333333
       );
       btn.setInteractive({ useHandCursor: true });
 
@@ -102,8 +100,8 @@ export class LeaderboardScene extends Phaser.Scene {
         y,
         labels[index],
         {
-          fontSize: isMobile ? '12px' : '14px',
-          color: isActive ? '#000000' : '#00F5FF', // Tertiary text: Bright Cyan
+          fontSize: layout.tabs.fontSize,
+          color: isActive ? '#000000' : '#00F5FF',
           fontFamily: 'Arial, sans-serif',
           fontStyle: 'bold'
         }
@@ -116,13 +114,13 @@ export class LeaderboardScene extends Phaser.Scene {
 
       btn.on('pointerover', () => {
         if (!isActive) {
-          btn.setFillStyle(0x444444); // Tertiary hover: slightly lighter
+          btn.setFillStyle(0x444444);
         }
       });
 
       btn.on('pointerout', () => {
         if (!isActive) {
-          btn.setFillStyle(0x333333); // Tertiary normal
+          btn.setFillStyle(0x333333);
         }
       });
     });
@@ -148,7 +146,8 @@ export class LeaderboardScene extends Phaser.Scene {
     // Clear previous entries
     this.entryContainer.removeAll(true);
 
-    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const mobile = isMobile();
+    const layout = getLeaderboardLayout();
     const centerX = this.cameras.main.width / 2;
 
     if (this.entries.length === 0) {
@@ -157,7 +156,7 @@ export class LeaderboardScene extends Phaser.Scene {
         100,
         'No scores yet. Be the first!',
         {
-          fontSize: isMobile ? '16px' : '18px',
+          fontSize: mobile ? '16px' : '18px',
           color: '#888888',
           fontFamily: 'Arial, sans-serif',
           fontStyle: 'italic'
@@ -168,10 +167,10 @@ export class LeaderboardScene extends Phaser.Scene {
       return;
     }
 
-    const entryHeight = isMobile ? 50 : 60;
-    const entryGap = isMobile ? 8 : 12;
+    const entryHeight = layout.entries.entryHeight;
+    const entryGap = mobile ? 8 : 12;
 
-    this.entries.forEach((entry, index) => {
+    this.entries.slice(0, layout.entries.maxVisible).forEach((entry, index) => {
       const y = index * (entryHeight + entryGap);
       this.createEntryRow(entry, index + 1, centerX, y, entryHeight);
     });
@@ -180,8 +179,9 @@ export class LeaderboardScene extends Phaser.Scene {
   private createEntryRow(entry: LeaderboardEntry, rank: number, centerX: number, y: number, height: number): void {
     if (!this.entryContainer) return;
 
-    const isMobile = GAME_CONFIG.IS_MOBILE;
-    const entryWidth = isMobile ? Math.min(this.cameras.main.width - 32, 380) : 700;
+    const mobile = isMobile();
+    const layout = getLeaderboardLayout();
+    const entryWidth = mobile ? Math.min(this.cameras.main.width - 32, 380) : (layout.entries.width || 700);
 
     // Background
     const bgColor = rank <= 3 ? 0x3a3a3a : 0x2a2a2a;
@@ -200,11 +200,11 @@ export class LeaderboardScene extends Phaser.Scene {
     }
 
     const rankDisplay = this.add.text(
-      centerX - entryWidth / 2 + (isMobile ? 25 : 40),
+      centerX - entryWidth / 2 + layout.entries.paddingHorizontal + (layout.entries.medalSize / 2),
       y + height / 2,
       rankText,
       {
-        fontSize: isMobile ? '18px' : '20px',
+        fontSize: `${layout.entries.medalSize}px`,
         color: rankColor,
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -213,38 +213,38 @@ export class LeaderboardScene extends Phaser.Scene {
 
     // Player name
     const name = this.add.text(
-      centerX - entryWidth / 2 + (isMobile ? 65 : 100),
+      centerX - entryWidth / 2 + layout.entries.paddingHorizontal + layout.entries.medalSize + 20,
       y + height / 2,
       entry.playerName,
       {
-        fontSize: isMobile ? '16px' : '18px',
+        fontSize: layout.entries.nameFontSize,
         color: '#00F5FF',
         fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
+        fontStyle: layout.entries.nameFontWeight
       }
     ).setOrigin(0, 0.5);
 
     // Score
     const score = this.add.text(
-      centerX + entryWidth / 2 - (isMobile ? 15 : 20),
+      centerX + entryWidth / 2 - layout.entries.paddingHorizontal,
       y + height / 2,
       entry.totalScore.toLocaleString(),
       {
-        fontSize: isMobile ? '16px' : '18px',
+        fontSize: layout.entries.scoreFontSize,
         color: '#F59E0B',
         fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
+        fontStyle: layout.entries.scoreFontWeight
       }
     ).setOrigin(1, 0.5);
 
     // Completion indicator
     if (entry.gameCompleted) {
       const checkmark = this.add.text(
-        centerX + entryWidth / 2 - (isMobile ? 90 : 120),
+        centerX + entryWidth / 2 - layout.entries.paddingHorizontal - parseInt(layout.entries.scoreFontSize) * 4,
         y + height / 2,
         '✓',
         {
-          fontSize: isMobile ? '16px' : '18px',
+          fontSize: layout.entries.nameFontSize,
           color: '#10B981',
           fontFamily: 'Arial, sans-serif'
         }
@@ -256,22 +256,22 @@ export class LeaderboardScene extends Phaser.Scene {
     this.entryContainer.add([bg, rankDisplay, name, score]);
   }
 
-  private createBackButton(isMobile: boolean): void {
+  private createBackButton(mobile: boolean): void {
     const screenHeight = this.cameras.main.height;
     const screenWidth = this.cameras.main.width;
     const centerX = screenWidth / 2;
+    const layout = getLeaderboardLayout();
 
-    if (isMobile) {
-      // Sticky bottom buttons on mobile
-      const bottomSafeArea = 80; // Match other scenes
-      const shelfHeight = 128; // Height for 2 buttons
-      const btnHeight = 50;
-      const gap = 8;
+    if (mobile) {
+      const { bottomButtons } = layout;
+      const bottomSafe = screenHeight - bottomButtons.y; // Distance from buttonY to bottom
+      const shelfHeight = bottomButtons.buttonHeight * 2 + bottomButtons.gap + 32;
+      const shelfY = screenHeight - shelfHeight / 2 - bottomSafe;
 
       // Create sticky shelf background
       const shelf = this.add.rectangle(
         centerX,
-        screenHeight - shelfHeight / 2 - bottomSafeArea,
+        shelfY,
         screenWidth,
         shelfHeight,
         0x1a1a1a
@@ -282,7 +282,7 @@ export class LeaderboardScene extends Phaser.Scene {
       // Add top border
       const border = this.add.rectangle(
         centerX,
-        screenHeight - shelfHeight - bottomSafeArea,
+        shelfY - shelfHeight / 2,
         screenWidth,
         1,
         0x4a4a4a
@@ -291,10 +291,10 @@ export class LeaderboardScene extends Phaser.Scene {
       border.setDepth(1000);
 
       const topPadding = 16;
-      const buttonY1 = screenHeight - shelfHeight + topPadding + btnHeight / 2 - bottomSafeArea;
-      const buttonY2 = buttonY1 + btnHeight + gap;
+      const buttonY1 = shelfY - shelfHeight / 2 + topPadding + bottomButtons.buttonHeight / 2;
+      const buttonY2 = buttonY1 + bottomButtons.buttonHeight + bottomButtons.gap;
 
-      // Play Again button (Primary action)
+      // Play Again button
       this.createButton(
         centerX,
         buttonY1,
@@ -304,53 +304,51 @@ export class LeaderboardScene extends Phaser.Scene {
           progressManager.startNewGame();
           this.scene.start('GameScene');
         },
-        0x00F5FF, // Primary: Bright Cyan
+        0x00F5FF,
         screenWidth - 32,
-        btnHeight,
+        bottomButtons.buttonHeight,
         true
       );
 
-      // Home button (Secondary action)
+      // Home button
       this.createButton(
         centerX,
         buttonY2,
         'Home',
         () => window.location.href = '/',
-        0xF59E0B, // Secondary: Solar Gold
+        0xF59E0B,
         screenWidth - 32,
-        btnHeight,
+        bottomButtons.buttonHeight,
         true
       );
     } else {
-      // Desktop: Two buttons side by side
-      const buttonY = screenHeight - 60;
-      const buttonSpacing = 120;
+      const { bottomButtons } = layout;
 
-      // Play Again button (Primary action)
+      // Play Again button
       this.createButton(
-        centerX - buttonSpacing,
-        buttonY,
+        centerX - bottomButtons.buttonWidth! / 2 - bottomButtons.gap / 2,
+        bottomButtons.y,
         'Play Again',
         () => {
           const progressManager = GameProgressManager.getInstance();
           progressManager.startNewGame();
           this.scene.start('GameScene');
         },
-        0x00F5FF, // Primary: Bright Cyan
-        200,
-        50,
+        0x00F5FF,
+        bottomButtons.buttonWidth!,
+        bottomButtons.buttonHeight,
         false
       );
 
-      // Home button (Secondary action)
+      // Home button
       this.createButton(
-        centerX + buttonSpacing,
-        buttonY,
+        centerX + bottomButtons.buttonWidth! / 2 + bottomButtons.gap / 2,
+        bottomButtons.y,
         'Home',
         () => window.location.href = '/',
-        0xF59E0B, // Secondary: Solar Gold
-        200,
-        50,
+        0xF59E0B,
+        bottomButtons.buttonWidth!,
+        bottomButtons.buttonHeight,
         false
       );
     }
@@ -373,8 +371,9 @@ export class LeaderboardScene extends Phaser.Scene {
       btn.setDepth(1001);
     }
 
+    const layout = getLeaderboardLayout();
     const btnText = this.add.text(x, y, text, {
-      fontSize: '20px',
+      fontSize: layout.bottomButtons.fontSize || '20px',
       color: '#000000',
       fontFamily: 'Arial, sans-serif',
       fontStyle: 'bold'

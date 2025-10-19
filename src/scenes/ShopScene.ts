@@ -4,6 +4,7 @@ import { ShopSystem } from '../game/ShopSystem';
 import { LocalStorageManager } from '../services/LocalStorageManager';
 import { GAME_CONFIG } from '../types';
 import type { ShopItem } from '../types/Progress';
+import { getShopLayout, isMobile } from '../config/ResponsiveConfig';
 
 export class ShopScene extends Phaser.Scene {
   private shopSystem!: ShopSystem;
@@ -32,60 +33,44 @@ export class ShopScene extends Phaser.Scene {
     this.progressManager = GameProgressManager.getInstance();
 
     const centerX = this.cameras.main.width / 2;
-    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const mobile = isMobile();
+    const layout = getShopLayout();
 
-    // Background
     this.cameras.main.setBackgroundColor('#2a2a2a');
 
-    // Responsive font sizes per design spec
-    const fontSize = {
-      header: isMobile ? '36px' : '60px', // text-4xl / text-6xl
-      score: isMobile ? '20px' : '24px', // text-xl / text-2xl
-      instructions: isMobile ? '14px' : '16px', // text-sm / text-base
-      warning: isMobile ? '14px' : '16px', // text-sm / text-base
-      message: isMobile ? '14px' : '16px',
-      button: isMobile ? '20px' : '24px', // text-xl / text-2xl
-      pagination: isMobile ? '14px' : '16px', // text-sm / text-base
-      itemTitle: isMobile ? '18px' : '20px', // text-lg / text-xl
-      itemDesc: isMobile ? '14px' : '16px', // text-sm / text-base
-      cost: isMobile ? '20px' : '24px' // text-xl / text-2xl
-    };
-
-    let currentY = isMobile ? 32 : 32; // More top margin on mobile
-
-    // Shop header with cart icons (no emojis in title per spec)
+    // Shop header
     const headerText = this.add.text(
       centerX,
-      currentY,
+      layout.header.y,
       'COSMIC SHOP',
       {
-        fontSize: fontSize.header,
-        color: '#F59E0B', // Solar gold
+        fontSize: layout.header.fontSize,
+        color: '#F59E0B',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: isMobile ? 2 : 3
+        strokeThickness: mobile ? 2 : 3
       }
     );
     headerText.setOrigin(0.5, 0.5);
 
-    // Add cart icons on sides (32px mobile / 40px desktop per spec)
-    const cartSize = isMobile ? 32 : 40;
+    // Add cart icons
+    const cartSize = mobile ? 32 : 40;
     this.add.text(
       centerX - headerText.width / 2 - cartSize - 10,
-      currentY,
+      layout.header.y,
       '🛒',
       { fontSize: `${cartSize}px` }
     ).setOrigin(0.5, 0.5);
 
     this.add.text(
       centerX + headerText.width / 2 + cartSize + 10,
-      currentY,
+      layout.header.y,
       '🛒',
       { fontSize: `${cartSize}px` }
     ).setOrigin(0.5, 0.5);
 
-    // Animate header only on first load
+    // Animate header
     if (!this.hasAnimated) {
       this.tweens.add({
         targets: headerText,
@@ -96,82 +81,64 @@ export class ShopScene extends Phaser.Scene {
       this.hasAnimated = true;
     }
 
-    currentY += isMobile ? 30 : 45;
-
-    // Current score display
+    // Total score display
     this.pointsText = this.add.text(
       centerX,
-      currentY,
+      layout.totalScore.y,
       `Total Score: ${this.progressManager.getTotalScore().toLocaleString()}`,
       {
-        fontSize: fontSize.score,
+        fontSize: layout.totalScore.fontSize,
         color: '#F59E0B',
         fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
+        fontStyle: layout.totalScore.fontWeight
       }
     );
     this.pointsText.setOrigin(0.5, 0.5);
 
-    currentY += isMobile ? 25 : 35;
-
     // Instructions
-    const instructionText = this.add.text(
+    this.add.text(
       centerX,
-      currentY,
-      isMobile ? 'Spend your score for upgrades' : 'Spend your score for upgrades that help in future rounds',
+      layout.description.y,
+      mobile ? 'Spend your score for upgrades' : 'Spend your score for upgrades that help in future rounds',
       {
-        fontSize: fontSize.instructions,
+        fontSize: layout.description.fontSize,
         color: '#cccccc',
         fontFamily: 'Arial, sans-serif'
       }
-    );
-    instructionText.setOrigin(0.5, 0.5);
+    ).setOrigin(0.5, 0.5);
 
-    currentY += isMobile ? 15 : 18;
-
-    // Warning about spending
-    const warningText = this.add.text(
+    // Warning
+    this.add.text(
       centerX,
-      currentY,
-      isMobile ? 'Purchases reduce your total score!' : 'Each purchase permanently reduces your total score!',
+      layout.warning.y,
+      mobile ? 'Purchases reduce your total score!' : 'Each purchase permanently reduces your total score!',
       {
-        fontSize: fontSize.warning,
-        color: '#FF6B6B',
+        fontSize: layout.warning.fontSize,
+        color: layout.warning.color,
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'italic'
       }
-    );
-    warningText.setOrigin(0.5, 0.5);
+    ).setOrigin(0.5, 0.5);
 
-    currentY += isMobile ? 30 : 35;
-
-    // Pagination controls - ABOVE items per spec
+    // Pagination controls
     const availableItems = this.shopSystem.getAvailableItems();
     const totalPages = Math.ceil(availableItems.length / this.itemsPerPage);
     if (totalPages > 1) {
-      this.createPaginationControls(centerX, currentY, totalPages);
-      currentY += isMobile ? 50 : 50; // More spacing after pagination
+      this.createPaginationControls(centerX, layout.pageIndicator.y, totalPages);
     }
 
-    currentY += isMobile ? 20 : 25; // More spacing before items
-
     // Display shop items
-    const itemsStartY = currentY;
-    const itemHeight = isMobile ? 110 : 110; // Match actual item height
-    const itemGap = isMobile ? 8 : 12; // Gap between items (matches displayShopItems)
-    this.displayShopItems(centerX, itemsStartY);
+    this.displayShopItems(centerX, layout.cards.startY);
 
-    // Calculate position for message (no bottom pagination per spec)
-    const visibleItems = Math.min(availableItems.length, this.itemsPerPage);
-    currentY = itemsStartY + (visibleItems > 0 ? visibleItems * (itemHeight + itemGap) + 20 : 70);
+    // Message area - use fixed position from layout to avoid overlaps
+    const messageY = layout.messageArea?.y || (layout.cards.startY + 350);
 
-    // Message area for feedback
     this.messageText = this.add.text(
       centerX,
-      currentY,
+      messageY,
       '',
       {
-        fontSize: fontSize.message,
+        fontSize: mobile ? '14px' : '16px',
         color: '#00F5FF',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'italic'
@@ -179,15 +146,14 @@ export class ShopScene extends Phaser.Scene {
     );
     this.messageText.setOrigin(0.5, 0.5);
 
-    currentY += isMobile ? 30 : 40;
-
-    // Continue button - ensure it's visible by adding more spacing
-    this.createContinueButton(centerX, currentY);
+    // Continue button - positioned below message with safe spacing
+    this.createContinueButton(centerX, messageY);
   }
 
   private displayShopItems(centerX: number, startY: number): void {
     const availableItems = this.shopSystem.getAvailableItems();
-    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const mobile = isMobile();
+    const layout = getShopLayout();
 
     if (availableItems.length === 0) {
       this.add.text(
@@ -195,7 +161,7 @@ export class ShopScene extends Phaser.Scene {
         startY + 50,
         'No items available for purchase',
         {
-          fontSize: isMobile ? '16px' : '20px',
+          fontSize: mobile ? '16px' : '20px',
           color: '#888888',
           fontFamily: 'Arial, sans-serif',
           fontStyle: 'italic'
@@ -204,24 +170,22 @@ export class ShopScene extends Phaser.Scene {
       return;
     }
 
-    // Create container for items (for easier pagination)
+    // Create container for items
     if (this.itemContainer) {
       this.itemContainer.destroy();
     }
     this.itemContainer = this.add.container(0, 0);
 
-    const itemHeight = isMobile ? 110 : 110; // Reduced desktop height
-    const itemGap = isMobile ? 8 : 12; // Gap between items
     const startIndex = this.currentPage * this.itemsPerPage;
     const endIndex = Math.min(startIndex + this.itemsPerPage, availableItems.length);
 
     const itemsToDisplay = availableItems.slice(startIndex, endIndex);
     itemsToDisplay.forEach((item, index) => {
-      this.createShopItemUI(item, centerX, startY + (index * (itemHeight + itemGap)));
+      this.createShopItemUI(item, centerX, startY + (index * (layout.cards.cardHeight + layout.cards.gap)));
     });
 
     // Enable swipe on mobile
-    if (isMobile && availableItems.length > this.itemsPerPage) {
+    if (mobile && availableItems.length > this.itemsPerPage) {
       this.input.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
         this.input.once('pointerup', (pointerUp: Phaser.Input.Pointer) => {
           const swipeDistance = pointerUp.x - pointer.x;
@@ -247,25 +211,19 @@ export class ShopScene extends Phaser.Scene {
     const currentCost = this.shopSystem.getItemCost(item.id);
     const canAfford = this.progressManager.canAfford(currentCost);
     const purchaseCount = this.shopSystem.getItemPurchaseCount(item.id);
-    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const mobile = isMobile();
+    const layout = getShopLayout();
+    const { cards } = layout;
 
-    // Responsive sizing per design spec
-    const itemWidth = isMobile ? Math.min(this.cameras.main.width - 32, 400) : 750; // Increased width
-    const itemHeight = isMobile ? 110 : 110; // Match height from display logic
-    // Use fontSize from create() method per design spec
-    const fontSize = {
-      name: isMobile ? '18px' : '20px', // text-lg / text-xl
-      description: isMobile ? '14px' : '16px', // text-sm / text-base
-      cost: isMobile ? '20px' : '24px', // text-xl / text-2xl
-      button: isMobile ? '16px' : '18px' // text-base / text-lg
-    };
+    // Responsive sizing from layout config - enforce max width constraint
+    const itemWidth = mobile ? Math.min(this.cameras.main.width - 32, 400) : Math.min(cards.width || 800, 800);
+    const itemHeight = cards.cardHeight;
 
     // Item background
     const itemBg = this.add.rectangle(centerX, y, itemWidth, itemHeight, 0x333333);
     itemBg.setStrokeStyle(2, canAfford ? 0x00F5FF : 0x666666);
 
-    const leftMargin = isMobile ? -itemWidth / 2 + 5 : -340;
-    const iconPadding = 5;
+    const leftMargin = -itemWidth / 2 + cards.paddingLeft;
 
     // Icon (if available) - left aligned
     if (item.icon) {
@@ -282,14 +240,12 @@ export class ShopScene extends Phaser.Scene {
       }
 
       if (iconKey && this.textures.exists(iconKey)) {
-        const iconSize = isMobile ? 70 : 100;
         const icon = this.add.image(
-          centerX + leftMargin + iconPadding + iconSize / 2,
+          centerX + leftMargin + cards.iconSize / 2,
           y,
           iconKey
         );
-        // Force square dimensions to preserve circular shape
-        icon.setDisplaySize(iconSize, iconSize);
+        icon.setDisplaySize(cards.iconSize, cards.iconSize);
         icon.setOrigin(0.5, 0.5);
 
         if (!canAfford) {
@@ -298,80 +254,80 @@ export class ShopScene extends Phaser.Scene {
       }
     }
 
-    // Item name and owned count - offset right if there's an icon
+    // Item name and owned count
     let nameText = item.name;
     if (purchaseCount > 0) {
       nameText += ` (${purchaseCount})`;
     }
 
-    const iconSize = isMobile ? 70 : 100;
-    const iconOffset = item.icon ? iconPadding + iconSize + 8 : 0;
-    const nameYOffset = isMobile ? -20 : -15;
+    const iconOffset = item.icon ? cards.iconSize + cards.iconMarginRight : 0;
+    const nameYOffset = mobile ? -18 : -cards.titleMarginBottom - 10;
 
     this.add.text(
       centerX + leftMargin + iconOffset,
       y + nameYOffset,
       nameText,
       {
-        fontSize: fontSize.name,
+        fontSize: cards.titleFontSize,
         color: canAfford ? '#ffffff' : '#888888',
         fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
+        fontStyle: cards.titleFontWeight
       }
     ).setOrigin(0, 0.5);
 
-    // Item description (shorter on mobile) - also offset if there's an icon
-    const descriptionYOffset = isMobile ? 15 : 15;
-    // Leave room for cost + button on the right (roughly 200px)
-    const maxDescriptionWidth = isMobile ? itemWidth - 160 - iconOffset : itemWidth - iconOffset - 250;
+    // Item description
+    const descriptionYOffset = mobile ? 6 : 10;
+    const maxDescriptionWidth = mobile
+      ? itemWidth - iconOffset - cards.paddingLeft - cards.paddingRight - 90
+      : itemWidth - iconOffset - cards.paddingLeft - cards.paddingRight - 150;
 
     this.add.text(
       centerX + leftMargin + iconOffset,
       y + descriptionYOffset,
       item.description,
       {
-        fontSize: fontSize.description,
-        color: canAfford ? '#cccccc' : '#666666',
+        fontSize: cards.descriptionFontSize,
+        color: canAfford ? cards.descriptionColor : '#666666',
         fontFamily: 'Arial, sans-serif',
         wordWrap: { width: maxDescriptionWidth }
       }
     ).setOrigin(0, 0.5);
 
-    // Cost and button positioning - arranged in a row on mobile
-    const btnWidth = isMobile ? 60 : 100;
-    const btnHeight = isMobile ? 35 : 40;
+    // Cost and button positioning
+    const btnWidth = cards.buttonWidth;
+    const btnHeight = cards.buttonHeight;
 
-    if (isMobile) {
-      // Mobile: cost stacked above button
-      const btnXOffset = itemWidth / 2 - 40;
+    if (mobile) {
+      // Mobile: cost and button on the right side, vertically centered
+      const btnXOffset = itemWidth / 2 - 48;
 
-      // Cost above button
+      // Cost above button - positioned higher
       const costText = this.add.text(
         centerX + btnXOffset,
-        y - 18,
+        y - 16,
         `-${currentCost}`,
         {
-          fontSize: '13px',
+          fontSize: cards.costFontSize,
           color: canAfford ? '#FF6B6B' : '#888888',
           fontFamily: 'Arial, sans-serif',
-          fontStyle: 'bold'
+          fontStyle: cards.costFontWeight
         }
       );
       costText.setOrigin(0.5, 0.5);
 
-      // Button below cost
-      const btnColor = canAfford ? 0x00F5FF : 0x666666; // Primary: Bright Cyan when affordable
-      const purchaseBtn = this.add.rectangle(centerX + btnXOffset, y + 5, btnWidth, btnHeight, btnColor);
+      // Button below cost - positioned lower
+      const btnColor = canAfford ? 0x00F5FF : 0x666666;
+      const purchaseBtn = this.add.rectangle(centerX + btnXOffset, y + 12, btnWidth, btnHeight, btnColor);
 
       const btnText = this.add.text(
         centerX + btnXOffset,
-        y + 5,
+        y + 12,
         'BUY',
         {
-          fontSize: '13px',
+          fontSize: cards.buttonFontSize,
           color: '#000000',
           fontFamily: 'Arial, sans-serif',
-          fontStyle: 'bold'
+          fontStyle: cards.buttonFontWeight
         }
       );
       btnText.setOrigin(0.5, 0.5);
@@ -408,26 +364,26 @@ export class ShopScene extends Phaser.Scene {
         y,
         `-${currentCost}`,
         {
-          fontSize: fontSize.cost,
+          fontSize: cards.costFontSize,
           color: canAfford ? '#FF6B6B' : '#888888',
           fontFamily: 'Arial, sans-serif',
-          fontStyle: 'bold'
+          fontStyle: cards.costFontWeight
         }
       );
       costText.setOrigin(1, 0.5);
 
       // Purchase button
-      const btnColor = canAfford ? 0x00F5FF : 0x666666; // Primary: Bright Cyan when affordable
-        const purchaseBtn = this.add.rectangle(centerX + btnXOffset, y, btnWidth, btnHeight, btnColor);
+      const btnColor = canAfford ? 0x00F5FF : 0x666666;
+      const purchaseBtn = this.add.rectangle(centerX + btnXOffset, y, btnWidth, btnHeight, btnColor);
       const btnText = this.add.text(
         centerX + btnXOffset,
         y,
         'BUY',
         {
-          fontSize: fontSize.button,
+          fontSize: cards.buttonFontSize,
           color: '#000000',
           fontFamily: 'Arial, sans-serif',
-          fontStyle: 'bold'
+          fontStyle: cards.buttonFontWeight
         }
       );
       btnText.setOrigin(0.5, 0.5);
@@ -498,50 +454,49 @@ export class ShopScene extends Phaser.Scene {
     }
   }
 
-  private createContinueButton(centerX: number, y: number): void {
-    const isMobile = GAME_CONFIG.IS_MOBILE;
-    const screenHeight = this.cameras.main.height;
+  private createContinueButton(centerX: number, _y: number): void {
+    const mobile = isMobile();
+    const layout = getShopLayout();
     const screenWidth = this.cameras.main.width;
 
-    // Per design spec: px-12/16 py-4/6, text-xl/2xl
-    const btnWidth = isMobile ? screenWidth - 32 : 300; // Full width - padding on mobile
-    const btnPaddingY = isMobile ? 16 : 24; // py-4 / py-6
-    const btnFontSize = isMobile ? '20px' : '24px'; // text-xl / text-2xl
+    const btnWidth = mobile ? (layout.bottomButton.width || screenWidth - 40) : (layout.bottomButton.width || 300);
+    const btnHeight = layout.bottomButton.height;
+    const btnFontSize = layout.bottomButton.fontSize;
 
-    // On mobile, position button in sticky bottom shelf with safe area for Safari UI
-    const bottomSafeArea = isMobile ? 80 : 0; // Extra space for Safari bottom UI
-    const buttonY = isMobile ? screenHeight - 48 - bottomSafeArea : y; // Sticky bottom on mobile
+    // Position button using layout config
+    const buttonY = layout.bottomButton.y;
 
     // Create sticky shelf background for mobile
-    if (isMobile) {
-      // Gradient background from-[#1a1a1a] to-[#2a2a2a]
-      const shelfHeight = 96; // Enough for padding + button
+    if (mobile) {
+      const shelfHeight = btnHeight + 40;
+      const shelfY = buttonY - btnHeight / 2 - 20;
+
       const shelf = this.add.rectangle(
         centerX,
-        screenHeight - shelfHeight / 2 - bottomSafeArea,
-        this.cameras.main.width,
+        shelfY + shelfHeight / 2,
+        screenWidth,
         shelfHeight,
         0x1a1a1a
       );
-      shelf.setScrollFactor(0); // Make it fixed/sticky
+      shelf.setScrollFactor(0);
       shelf.setDepth(1000);
 
       // Add top border
       const border = this.add.rectangle(
         centerX,
-        screenHeight - shelfHeight - bottomSafeArea,
-        this.cameras.main.width,
-        1,
+        shelfY,
+        screenWidth,
+        2,
         0x4a4a4a
       );
       border.setScrollFactor(0);
       border.setDepth(1000);
     }
 
-    const continueBtn = this.add.rectangle(centerX, buttonY, btnWidth, btnPaddingY * 2 + 24, 0x00F5FF);
+    const continueBtn = this.add.rectangle(centerX, buttonY, btnWidth, btnHeight, 0x00F5FF);
     continueBtn.setInteractive({ useHandCursor: true });
-    if (isMobile) {
-      continueBtn.setScrollFactor(0); // Make button sticky
+    if (mobile) {
+      continueBtn.setScrollFactor(0);
       continueBtn.setDepth(1001);
     }
 
@@ -557,8 +512,8 @@ export class ShopScene extends Phaser.Scene {
       }
     );
     btnText.setOrigin(0.5, 0.5);
-    if (isMobile) {
-      btnText.setScrollFactor(0); // Make text sticky
+    if (mobile) {
+      btnText.setScrollFactor(0);
       btnText.setDepth(1002);
     }
 
@@ -668,14 +623,14 @@ export class ShopScene extends Phaser.Scene {
       });
     }
 
-    // Swipe hint on mobile
+    // Swipe hint on mobile - positioned below pagination to avoid overlap
     if (isMobile) {
       this.add.text(
         centerX,
-        y + 25,
-        'Swipe to browse items',
+        y + 22,
+        'Swipe to browse',
         {
-          fontSize: '12px',
+          fontSize: '11px',
           color: '#888888',
           fontFamily: 'Arial, sans-serif',
           fontStyle: 'italic'

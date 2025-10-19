@@ -2,7 +2,7 @@ import * as Phaser from 'phaser';
 import { GameProgressManager } from '../game/GameProgressManager';
 import { LocalStorageManager } from '../services/LocalStorageManager';
 import { LeaderboardService } from '../services/LeaderboardService';
-import { GAME_CONFIG } from '../types';
+import { getCampaignCompleteLayout, isMobile } from '../config/ResponsiveConfig';
 import type { ScoreSubmission } from '../types/Leaderboard';
 
 export class GameOverScene extends Phaser.Scene {
@@ -27,6 +27,8 @@ export class GameOverScene extends Phaser.Scene {
     const centerX = this.cameras.main.width / 2;
     const progressManager = GameProgressManager.getInstance();
     const progress = progressManager.getProgress();
+    const mobile = isMobile();
+    const layout = getCampaignCompleteLayout();
 
     // Clear saved game - game is complete
     LocalStorageManager.clearSave();
@@ -37,15 +39,15 @@ export class GameOverScene extends Phaser.Scene {
     // Game complete header
     const headerText = this.add.text(
       centerX,
-      60,
+      layout.title.y,
       'CAMPAIGN COMPLETE!',
       {
-        fontSize: '48px',
+        fontSize: layout.title.fontSize,
         color: '#EC4899', // Plasma pink
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold',
         stroke: '#000000',
-        strokeThickness: 4
+        strokeThickness: mobile ? 2 : 3
       }
     );
     headerText.setOrigin(0.5, 0.5);
@@ -61,13 +63,13 @@ export class GameOverScene extends Phaser.Scene {
     // Final score with animation
     const finalScoreText = this.add.text(
       centerX,
-      130,
+      layout.finalScore.y,
       `Final Score: 0`,
       {
-        fontSize: '36px',
+        fontSize: layout.finalScore.fontSize,
         color: '#F59E0B', // Solar gold
         fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
+        fontStyle: layout.finalScore.fontWeight
       }
     );
     finalScoreText.setOrigin(0.5, 0.5);
@@ -90,10 +92,10 @@ export class GameOverScene extends Phaser.Scene {
     // Stats header
     this.add.text(
       centerX,
-      200,
+      layout.breakdown.titleY,
       'Round Breakdown',
       {
-        fontSize: '24px',
+        fontSize: layout.breakdown.titleSize,
         color: '#00F5FF',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -101,66 +103,74 @@ export class GameOverScene extends Phaser.Scene {
     ).setOrigin(0.5, 0.5);
 
     // Round scores in two columns
-    this.displayRoundScores(centerX, 240, progress.roundScores);
+    this.displayRoundScores(centerX, layout.breakdown.startY, progress.roundScores);
 
-    // Statistics
+    // Statistics - display on both mobile and desktop
     const stats = this.calculateStatistics(progress.roundScores);
-    const statsY = 460;
+    const statsY = layout.stats.startY;
 
-    // Best round
-    this.add.text(
-      centerX - 150,
-      statsY,
-      `Best Round: ${stats.bestRound}`,
-      {
-        fontSize: '18px',
-        color: '#ffffff',
-        fontFamily: 'Arial, sans-serif'
-      }
-    ).setOrigin(0.5, 0.5);
+    if (layout.stats.display && !mobile) {
+      // Desktop: stack vertically to prevent overlap
+      const isVertical = layout.stats.layout === 'vertical';
 
-    this.add.text(
-      centerX - 150,
-      statsY + 25,
-      `Score: ${stats.bestScore.toLocaleString()}`,
-      {
-        fontSize: '16px',
-        color: '#00F5FF',
-        fontFamily: 'Arial, sans-serif'
-      }
-    ).setOrigin(0.5, 0.5);
+      if (isVertical) {
+        // Best round
+        this.add.text(
+          centerX,
+          statsY,
+          `Best Round: ${stats.bestRound}  •  Score: ${stats.bestScore.toLocaleString()}`,
+          {
+            fontSize: layout.stats.labelSize,
+            color: '#00F5FF',
+            fontFamily: 'Arial, sans-serif'
+          }
+        ).setOrigin(0.5, 0.5);
 
-    // Average score
-    this.add.text(
-      centerX + 150,
-      statsY,
-      `Average Score:`,
-      {
-        fontSize: '18px',
-        color: '#ffffff',
-        fontFamily: 'Arial, sans-serif'
+        // Average score
+        this.add.text(
+          centerX,
+          statsY + layout.stats.gap + 30,
+          `Average Score: ${stats.averageScore.toLocaleString()}`,
+          {
+            fontSize: layout.stats.labelSize,
+            color: '#00F5FF',
+            fontFamily: 'Arial, sans-serif'
+          }
+        ).setOrigin(0.5, 0.5);
       }
-    ).setOrigin(0.5, 0.5);
+    } else if (mobile && layout.stats.display) {
+      // Mobile: also show stats, stacked vertically
+      this.add.text(
+        centerX,
+        statsY,
+        `Best: Round ${stats.bestRound} (${stats.bestScore.toLocaleString()})`,
+        {
+          fontSize: layout.stats.labelSize,
+          color: '#00F5FF',
+          fontFamily: 'Arial, sans-serif'
+        }
+      ).setOrigin(0.5, 0.5);
 
-    this.add.text(
-      centerX + 150,
-      statsY + 25,
-      `${stats.averageScore.toLocaleString()}`,
-      {
-        fontSize: '16px',
-        color: '#00F5FF',
-        fontFamily: 'Arial, sans-serif'
-      }
-    ).setOrigin(0.5, 0.5);
+      this.add.text(
+        centerX,
+        statsY + layout.stats.gap + 20,
+        `Avg: ${stats.averageScore.toLocaleString()}`,
+        {
+          fontSize: layout.stats.labelSize,
+          color: '#00F5FF',
+          fontFamily: 'Arial, sans-serif'
+        }
+      ).setOrigin(0.5, 0.5);
+    }
 
     // Performance rating
     const rating = this.getPerformanceRating(progress.totalScore);
     const ratingText = this.add.text(
       centerX,
-      540,
+      layout.encouragement.y,
       rating.text,
       {
-        fontSize: '28px',
+        fontSize: layout.encouragement.fontSize,
         color: rating.color,
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -178,9 +188,7 @@ export class GameOverScene extends Phaser.Scene {
     });
 
     // Leaderboard buttons
-    const isMobile = GAME_CONFIG.IS_MOBILE;
-
-    if (isMobile) {
+    if (mobile) {
       this.createMobileButtons(centerX);
     } else {
       this.createDesktopButtons(centerX);
@@ -193,56 +201,57 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private createDesktopButtons(centerX: number): void {
-    const startY = 580;
-    const btnHeight = 60;
-    const gap = 15;
+    const layout = getCampaignCompleteLayout();
+    const { buttons } = layout;
+    const btnY = buttons.y || 580;
 
     // Submit to Leaderboard button (Primary action)
     this.createButton(
       centerX,
-      startY,
+      btnY,
       'Submit Score',
       () => this.promptForName(),
       0x00F5FF, // Primary: Bright Cyan
-      250,
-      btnHeight
+      buttons.buttonWidth || 250,
+      buttons.buttonHeight
     );
 
     // View Leaderboard button (Secondary action)
     this.createButton(
       centerX,
-      startY + btnHeight + gap,
+      btnY + buttons.buttonHeight + buttons.gap,
       'Leaderboard',
       () => this.scene.start('LeaderboardScene'),
       0xF59E0B, // Secondary: Solar Gold
-      250,
-      btnHeight
+      buttons.buttonWidth || 250,
+      buttons.buttonHeight
     );
 
     // Play again button (Primary action)
     this.createButton(
       centerX,
-      startY + (btnHeight + gap) * 2,
+      btnY + (buttons.buttonHeight + buttons.gap) * 2,
       'Play Again',
       () => this.startNewGame(),
       0x00F5FF, // Primary: Bright Cyan
-      250,
-      btnHeight
+      buttons.buttonWidth || 250,
+      buttons.buttonHeight
     );
   }
 
   private createMobileButtons(centerX: number): void {
     const screenHeight = this.cameras.main.height;
     const screenWidth = this.cameras.main.width;
-    const bottomSafeArea = 80;
-    const shelfHeight = 180; // Height for 3 buttons
-    const btnHeight = 50;
-    const gap = 8;
+    const layout = getCampaignCompleteLayout();
+    const { buttons } = layout;
+
+    const bottomSafeArea = layout.buttons.startY ? (screenHeight - layout.buttons.startY) : 140;
+    const shelfHeight = buttons.buttonHeight * 3 + buttons.gap * 2 + 32;
 
     // Create sticky shelf
     const shelf = this.add.rectangle(
       centerX,
-      screenHeight - shelfHeight / 2 - bottomSafeArea,
+      screenHeight - shelfHeight / 2 - bottomSafeArea + buttons.buttonHeight,
       screenWidth,
       shelfHeight,
       0x1a1a1a
@@ -252,7 +261,7 @@ export class GameOverScene extends Phaser.Scene {
 
     const border = this.add.rectangle(
       centerX,
-      screenHeight - shelfHeight - bottomSafeArea,
+      screenHeight - shelfHeight - bottomSafeArea + buttons.buttonHeight,
       screenWidth,
       1,
       0x4a4a4a
@@ -261,9 +270,9 @@ export class GameOverScene extends Phaser.Scene {
     border.setDepth(1000);
 
     const topPadding = 16;
-    const buttonY1 = screenHeight - shelfHeight + topPadding + btnHeight / 2 - bottomSafeArea;
-    const buttonY2 = buttonY1 + btnHeight + gap;
-    const buttonY3 = buttonY2 + btnHeight + gap;
+    const buttonY1 = screenHeight - shelfHeight + topPadding + buttons.buttonHeight / 2 - bottomSafeArea + buttons.buttonHeight;
+    const buttonY2 = buttonY1 + buttons.buttonHeight + buttons.gap;
+    const buttonY3 = buttonY2 + buttons.buttonHeight + buttons.gap;
 
     // Submit button (Primary action)
     this.createButton(
@@ -273,7 +282,7 @@ export class GameOverScene extends Phaser.Scene {
       () => this.promptForName(),
       0x00F5FF, // Primary: Bright Cyan
       screenWidth - 32,
-      btnHeight,
+      buttons.buttonHeight,
       true
     );
 
@@ -285,7 +294,7 @@ export class GameOverScene extends Phaser.Scene {
       () => this.scene.start('LeaderboardScene'),
       0xF59E0B, // Secondary: Solar Gold
       screenWidth - 32,
-      btnHeight,
+      buttons.buttonHeight,
       true
     );
 
@@ -297,7 +306,7 @@ export class GameOverScene extends Phaser.Scene {
       () => this.startNewGame(),
       0x00F5FF, // Primary: Bright Cyan
       screenWidth - 32,
-      btnHeight,
+      buttons.buttonHeight,
       true
     );
   }
@@ -312,7 +321,8 @@ export class GameOverScene extends Phaser.Scene {
     height: number,
     sticky: boolean = false
   ): void {
-    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const layout = getCampaignCompleteLayout();
+    const mobile = isMobile();
 
     const btn = this.add.rectangle(x, y, width, height, color);
     btn.setInteractive({ useHandCursor: true });
@@ -322,7 +332,7 @@ export class GameOverScene extends Phaser.Scene {
     }
 
     const btnText = this.add.text(x, y, text, {
-      fontSize: isMobile ? '18px' : '20px',
+      fontSize: layout.buttons.fontSize,
       color: '#000000',
       fontFamily: 'Arial, sans-serif',
       fontStyle: 'bold'
@@ -341,7 +351,7 @@ export class GameOverScene extends Phaser.Scene {
 
     btn.on('pointerover', () => {
       btn.setFillStyle(hoverColor);
-      if (!isMobile) {
+      if (!mobile) {
         this.tweens.add({
           targets: btn,
           scaleX: 1.05,
@@ -402,14 +412,14 @@ export class GameOverScene extends Phaser.Scene {
 
   private showSubmissionError(error?: string): void {
     const centerX = this.cameras.main.width / 2;
-    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const mobile = isMobile();
 
     const errorText = this.add.text(
       centerX,
-      isMobile ? 180 : 200,
+      mobile ? 180 : 200,
       `Failed to submit: ${error || 'Unknown error'}`,
       {
-        fontSize: isMobile ? '16px' : '18px',
+        fontSize: mobile ? '16px' : '18px',
         color: '#FF6B6B',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'italic'
@@ -419,17 +429,17 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private displayRoundScores(centerX: number, startY: number, scores: number[]): void {
+    const layout = getCampaignCompleteLayout();
     const columnWidth = 200;
     const leftX = centerX - columnWidth / 2;
     const rightX = centerX + columnWidth / 2;
-    const lineHeight = 30;
 
     // Display rounds 1-5 in left column, 6-10 in right column
     scores.forEach((score, index) => {
       const roundNumber = index + 1;
       const isLeftColumn = roundNumber <= 5;
       const x = isLeftColumn ? leftX : rightX;
-      const y = startY + ((roundNumber - 1) % 5) * lineHeight;
+      const y = startY + ((roundNumber - 1) % 5) * layout.breakdown.entryGap;
 
       // Round label
       this.add.text(
@@ -437,7 +447,7 @@ export class GameOverScene extends Phaser.Scene {
         y,
         `Round ${roundNumber}:`,
         {
-          fontSize: '16px',
+          fontSize: layout.breakdown.labelSize,
           color: '#888888',
           fontFamily: 'Arial, sans-serif'
         }
@@ -460,9 +470,10 @@ export class GameOverScene extends Phaser.Scene {
         y,
         `${score.toLocaleString()}${speedIndicator}`,
         {
-          fontSize: '16px',
+          fontSize: layout.breakdown.scoreSize,
           color: '#ffffff',
-          fontFamily: 'Arial, sans-serif'
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: layout.breakdown.fontWeight
         }
       ).setOrigin(0.5, 0.5);
     });

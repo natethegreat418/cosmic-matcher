@@ -9,20 +9,9 @@ import { LeaderboardScene } from './scenes/LeaderboardScene';
 import { LocalStorageManager } from './services/LocalStorageManager';
 import { GameProgressManager } from './game/GameProgressManager';
 import { ShopSystem } from './game/ShopSystem';
+import { getCanvasDimensions } from './config/ResponsiveConfig';
 
-// Calculate responsive dimensions for mobile and desktop
-const getGameDimensions = () => {
-  const isMobile = window.innerWidth < 768;
-  if (isMobile) {
-    return {
-      width: Math.min(window.innerWidth, 500),
-      height: window.innerHeight
-    };
-  }
-  return { width: 900, height: 700 };
-};
-
-const dimensions = getGameDimensions();
+const dimensions = getCanvasDimensions();
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,

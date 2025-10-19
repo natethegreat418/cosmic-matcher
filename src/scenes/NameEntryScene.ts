@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { GAME_CONFIG } from '../types';
+import { getNameEntryLayout, isMobile } from '../config/ResponsiveConfig';
 
 /**
  * Scene for entering player name for leaderboard submission
@@ -20,82 +21,74 @@ export class NameEntryScene extends Phaser.Scene {
 
   create(): void {
     const centerX = this.cameras.main.width / 2;
-    const centerY = this.cameras.main.height / 2;
-    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const mobile = isMobile();
+    const layout = getNameEntryLayout();
 
     this.cameras.main.setBackgroundColor('#2a2a2a');
 
     // Title
     this.add.text(
       centerX,
-      centerY - (isMobile ? 120 : 150),
+      layout.inputs.startY - 80,
       'Enter Your Name',
       {
-        fontSize: isMobile ? '28px' : '36px',
+        fontSize: mobile ? '28px' : '36px',
         color: '#00F5FF',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
       }
     ).setOrigin(0.5);
 
-    // Name display box
-    const boxWidth = isMobile ? 280 : 400;
-    const boxHeight = isMobile ? 50 : 60;
-
+    // Name input box
     const nameBox = this.add.rectangle(
       centerX,
-      centerY - (isMobile ? 40 : 50),
-      boxWidth,
-      boxHeight,
+      layout.inputs.startY,
+      layout.inputs.width,
+      layout.inputs.inputHeight,
       0x1a1a1a
     );
-    nameBox.setStrokeStyle(2, 0x00F5FF);
+    nameBox.setStrokeStyle(layout.inputs.borderWidth, 0x00F5FF);
 
     this.nameText = this.add.text(
       centerX,
-      centerY - (isMobile ? 40 : 50),
+      layout.inputs.startY,
       '_',
       {
-        fontSize: isMobile ? '24px' : '28px',
+        fontSize: layout.inputs.fontSize,
         color: '#ffffff',
         fontFamily: 'Arial, sans-serif'
       }
     ).setOrigin(0.5);
 
-    // Hide the text display on mobile since we use HTML input
-    if (isMobile) {
+    // Hide text display on mobile (use HTML input instead)
+    if (mobile) {
       this.nameText.setVisible(false);
     }
 
     // Instructions
     this.add.text(
       centerX,
-      centerY + (isMobile ? 30 : 40),
-      isMobile ? 'Tap to enter name' : 'Type your name and press Enter',
+      layout.placeholder.y,
+      mobile ? 'Tap to enter name' : 'Type your name and press Enter',
       {
-        fontSize: isMobile ? '14px' : '16px',
-        color: '#cccccc',
+        fontSize: layout.placeholder.fontSize,
+        color: layout.placeholder.color,
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'italic'
       }
     ).setOrigin(0.5);
 
-    // Handle mobile input (HTML input field)
-    if (isMobile) {
-      this.createMobileInput(centerX, centerY - 40);
-
-      // Create submit button for mobile
-      this.createSubmitButton(centerX, centerY + 80);
+    // Handle input
+    if (mobile) {
+      this.createMobileInput(centerX, layout.inputs.startY);
+      this.createSubmitButton(centerX, layout.submitButton.y);
     } else {
-      // Desktop keyboard input
       this.input.keyboard?.on('keydown', this.handleKeyPress, this);
-
-      // Create submit button
-      this.createSubmitButton(centerX, centerY + 100);
+      this.createSubmitButton(centerX, layout.submitButton.y);
     }
 
     // Skip button
-    this.createSkipButton(centerX, centerY + (isMobile ? 160 : 180));
+    this.createSkipButton(centerX, layout.skipButton.y);
   }
 
   private handleKeyPress(event: KeyboardEvent): void {
@@ -118,24 +111,27 @@ export class NameEntryScene extends Phaser.Scene {
   }
 
   private createMobileInput(x: number, y: number): void {
+    const layout = getNameEntryLayout();
+
     // Create HTML input element for native mobile keyboard
     const input = document.createElement('input');
     input.type = 'text';
     input.maxLength = 20;
     input.placeholder = 'Enter your name';
     input.style.position = 'absolute';
-    input.style.left = `${x - 140}px`;
-    input.style.top = `${y - 25}px`;
-    input.style.width = '280px';
-    input.style.height = '50px';
-    input.style.fontSize = '24px';
+    input.style.left = `${x - layout.inputs.width / 2}px`;
+    input.style.top = `${y - layout.inputs.inputHeight / 2}px`;
+    input.style.width = `${layout.inputs.width}px`;
+    input.style.height = `${layout.inputs.inputHeight}px`;
+    input.style.fontSize = layout.inputs.fontSize;
     input.style.textAlign = 'center';
     input.style.backgroundColor = '#1a1a1a';
     input.style.color = '#ffffff';
-    input.style.border = '2px solid #00F5FF';
-    input.style.borderRadius = '4px';
+    input.style.border = `${layout.inputs.borderWidth}px solid #00F5FF`;
+    input.style.borderRadius = `${layout.inputs.borderRadius}px`;
     input.style.outline = 'none';
     input.style.fontFamily = 'Arial, sans-serif';
+    input.style.padding = `${layout.inputs.padding}px`;
 
     // Add to DOM
     const gameCanvas = this.game.canvas.parentElement;
@@ -168,11 +164,15 @@ export class NameEntryScene extends Phaser.Scene {
   }
 
   private createSubmitButton(x: number, y: number): void {
-    const isMobile = GAME_CONFIG.IS_MOBILE;
-    const btnWidth = isMobile ? 200 : 200;
-    const btnHeight = isMobile ? 50 : 60;
+    const layout = getNameEntryLayout();
 
-    const btn = this.add.rectangle(x, y, btnWidth, btnHeight, 0x00F5FF); // Primary: Bright Cyan
+    const btn = this.add.rectangle(
+      x,
+      y,
+      layout.submitButton.width,
+      layout.submitButton.height,
+      0x00F5FF
+    );
     btn.setInteractive({ useHandCursor: true });
 
     const btnText = this.add.text(
@@ -180,7 +180,7 @@ export class NameEntryScene extends Phaser.Scene {
       y,
       'Submit',
       {
-        fontSize: isMobile ? '20px' : '24px',
+        fontSize: layout.submitButton.fontSize,
         color: '#000000',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold'
@@ -209,14 +209,14 @@ export class NameEntryScene extends Phaser.Scene {
   }
 
   private createSkipButton(x: number, y: number): void {
-    const isMobile = GAME_CONFIG.IS_MOBILE;
+    const layout = getNameEntryLayout();
 
     const skipBtn = this.add.text(
       x,
       y,
       'Skip',
       {
-        fontSize: isMobile ? '16px' : '18px',
+        fontSize: layout.skipButton.fontSize,
         color: '#888888',
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'italic'
