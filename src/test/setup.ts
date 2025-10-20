@@ -3,6 +3,8 @@
  * Runs before all tests to configure the testing environment
  */
 
+import { vi } from 'vitest';
+
 // Mock phaser3spectorjs module that Phaser tries to load
 vi.mock('phaser3spectorjs', () => ({ default: null }));
 

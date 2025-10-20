@@ -223,6 +223,53 @@ export class Tile {
     });
   }
 
+  /**
+   * Reset tile to new position and color (for object pooling)
+   * More efficient than creating a new tile from scratch
+   * @param gridX - New grid X coordinate
+   * @param gridY - New grid Y coordinate
+   * @param color - New tile color
+   */
+  public reset(gridX: number, gridY: number, color: TileColor): void {
+    this.gridX = gridX;
+    this.gridY = gridY;
+    this.color = color;
+    this.x = this.calculatePixelX(gridX);
+    this.y = this.calculatePixelY(gridY);
+
+    // Update sprite texture (only Images have setTexture)
+    if (this.sprite instanceof Phaser.GameObjects.Image) {
+      this.sprite.setTexture(color);
+    }
+    this.sprite.setPosition(this.x, this.y);
+    this.sprite.setAlpha(1);
+    this.sprite.setScale(1);
+    this.sprite.setRotation(0);
+    this.sprite.setVisible(true);
+
+    // Update background
+    if (this.backgroundRect) {
+      this.backgroundRect.setPosition(this.x, this.y);
+      this.backgroundRect.setAlpha(1);
+      this.backgroundRect.setScale(1);
+      this.backgroundRect.setRotation(0);
+      this.backgroundRect.setVisible(true);
+      this.backgroundRect.setStrokeStyle(2, 0x000000); // Reset to normal border
+    }
+  }
+
+  /**
+   * Hide tile (for object pooling - keeps object alive but invisible)
+   */
+  public hide(): void {
+    this.sprite.setVisible(false);
+    this.sprite.setAlpha(0);
+    if (this.backgroundRect) {
+      this.backgroundRect.setVisible(false);
+      this.backgroundRect.setAlpha(0);
+    }
+  }
+
   public destroy(): void {
     if (this.backgroundRect) {
       this.backgroundRect.destroy();

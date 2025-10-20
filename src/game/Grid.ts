@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 import { Tile } from './Tile';
+import { TilePool } from './TilePool';
 import { MatchDetector } from './MatchDetector';
 import { GameState } from './GameState';
 import { InputManager } from './InputManager';
@@ -13,6 +14,7 @@ export class Grid {
   private scene: Phaser.Scene;
   private inputManager: InputManager;
   private gameState: GameState;
+  private tilePool: TilePool;
   private swipeStartTile: Tile | null = null;
   private swipeStartX: number = 0;
   private swipeStartY: number = 0;
@@ -23,6 +25,7 @@ export class Grid {
     this.scene = scene;
     this.gameState = gameState;
     this.inputManager = new InputManager(scene);
+    this.tilePool = new TilePool(scene);
 
     this.tiles = Array.from({ length: height }, () =>
       Array.from({ length: width }, () => null)
@@ -50,7 +53,7 @@ export class Grid {
           attempts++;
         } while (attempts < maxAttempts && this.wouldCreateInitialMatch(row, col, color));
 
-        const tile = new Tile(col, row, color, this.scene);
+        const tile = this.tilePool.acquire(col, row, color);
         this.tiles[row][col] = tile;
       }
     }
@@ -418,12 +421,12 @@ export class Grid {
     const removalPromises = tilesToRemove.map(tile => tile.animateRemoval());
     await Promise.all(removalPromises);
 
-    // Remove tiles from the grid data structure
+    // Return tiles to pool instead of destroying them
     matches.forEach(matchGroup => {
       matchGroup.tiles.forEach(pos => {
         const tile = this.tiles[pos.row][pos.col];
         if (tile) {
-          tile.destroy();
+          this.tilePool.release(tile);
           this.tiles[pos.row][pos.col] = null;
         }
       });
@@ -482,11 +485,11 @@ export class Grid {
         }
       }
 
-      // Create new tiles for empty spaces
+      // Create new tiles for empty spaces (reuse from pool)
       for (let i = 0; i < emptyCount; i++) {
         const row = i;
         const color = this.getRandomColor();
-        const tile = new Tile(col, row, color, this.scene);
+        const tile = this.tilePool.acquire(col, row, color);
 
         this.tiles[row][col] = tile;
 
@@ -540,14 +543,17 @@ export class Grid {
     // Clean up input manager
     this.inputManager.destroy();
 
-    // Clean up tiles
+    // Return all active tiles to pool
     for (let row = 0; row < this.gridHeight; row++) {
       for (let col = 0; col < this.gridWidth; col++) {
         const tile = this.tiles[row][col];
         if (tile) {
-          tile.destroy();
+          this.tilePool.release(tile);
         }
       }
     }
+
+    // Destroy the pool (which destroys all pooled tiles)
+    this.tilePool.destroy();
   }
 }
