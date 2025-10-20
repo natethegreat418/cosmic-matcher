@@ -273,6 +273,98 @@ describe('MatchDetector', () => {
 
       expect(MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2)).toBe(false);
     });
+
+    it('should detect match when swapping creates horizontal 3-in-a-row', () => {
+      const grid = TileFactory.createMockGrid([
+        ['R', 'R', 'P', 'T', 'G', 'S', 'K', 'P'],
+        ['P', 'T', 'G', 'S', 'K', 'R', 'P', 'T'],
+      ]);
+
+      const pos1 = { row: 0, col: 2 }; // P
+      const pos2 = { row: 1, col: 2 }; // G
+      // After swap: R R G at row 0 (no match), but P at row 1, col 2 (no match either)
+
+      // Let's create a proper test case
+      const grid2 = TileFactory.createMockGrid([
+        ['R', 'R', 'T', 'P', 'G', 'S', 'K', 'P'],
+        ['P', 'T', 'R', 'S', 'K', 'R', 'P', 'T'],
+      ]);
+
+      const pos3 = { row: 0, col: 2 }; // T
+      const pos4 = { row: 1, col: 2 }; // R
+      // After swap: R R R at row 0 - this creates a match!
+
+      expect(MatchDetector.wouldSwapCreateMatch(grid2, pos3, pos4)).toBe(true);
+    });
+
+    it('should detect match when swapping creates vertical 3-in-a-row', () => {
+      const grid = TileFactory.createMockGrid([
+        ['R', 'P', 'T', 'G', 'S', 'K', 'P', 'T'],
+        ['R', 'P', 'G', 'S', 'K', 'R', 'P', 'T'],
+        ['T', 'P', 'S', 'K', 'R', 'P', 'T', 'G'],
+      ]);
+
+      const pos1 = { row: 2, col: 0 }; // T
+      const pos2 = { row: 2, col: 1 }; // P (adjacent to column of R R)
+      // After swap: Column 0 becomes R R P (no match)
+      // But column 1 becomes P P T at row 0,1,2... wait that's also not a match
+
+      // Let's fix the test
+      const grid2 = TileFactory.createMockGrid([
+        ['T', 'P', 'T', 'G', 'S', 'K', 'P', 'T'],
+        ['R', 'P', 'G', 'S', 'K', 'R', 'P', 'T'],
+        ['R', 'P', 'S', 'K', 'R', 'P', 'T', 'G'],
+      ]);
+
+      const pos3 = { row: 0, col: 0 }; // T
+      const pos4 = { row: 1, col: 0 }; // R
+      // After swap: Column 0 becomes R T R (no match)
+
+      // Actually let's make a clear case
+      const grid3 = TileFactory.createMockGrid([
+        ['P', 'T', 'T', 'G', 'S', 'K', 'P', 'T'],
+        ['P', 'R', 'G', 'S', 'K', 'R', 'P', 'T'],
+        ['R', 'P', 'S', 'K', 'R', 'P', 'T', 'G'],
+      ]);
+
+      const pos5 = { row: 2, col: 0 }; // R
+      const pos6 = { row: 2, col: 1 }; // P
+      // After swap: Column 0 becomes P P P - match!
+
+      expect(MatchDetector.wouldSwapCreateMatch(grid3, pos5, pos6)).toBe(true);
+    });
+
+    it('should handle edge positions correctly', () => {
+      const grid = TileFactory.createMockGrid([
+        ['R', 'R', 'P', 'T', 'G', 'S', 'K', 'P'],
+        ['P', 'T', 'G', 'S', 'K', 'R', 'P', 'T'],
+      ]);
+
+      // Test corner position
+      const pos1 = { row: 0, col: 0 }; // Top-left corner
+      const pos2 = { row: 0, col: 1 }; // Adjacent
+
+      // Should not crash, should return false
+      expect(MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2)).toBe(false);
+
+      // Test last column
+      const pos3 = { row: 0, col: 7 }; // Last column
+      const pos4 = { row: 1, col: 7 }; // Last column, adjacent row
+
+      expect(MatchDetector.wouldSwapCreateMatch(grid, pos3, pos4)).toBe(false);
+    });
+
+    it('should return false when tiles are null', () => {
+      const grid = TileFactory.createMockGrid([
+        ['R', 'R', null, 'T', 'G', 'S', 'K', 'P'],
+        ['P', 'T', 'G', 'S', 'K', 'R', 'P', 'T'],
+      ]);
+
+      const pos1 = { row: 0, col: 2 }; // null tile
+      const pos2 = { row: 0, col: 3 }; // T
+
+      expect(MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2)).toBe(false);
+    });
   });
 
   describe('areAdjacent', () => {
