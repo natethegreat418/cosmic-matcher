@@ -38,25 +38,34 @@ export class GameOverScene extends Phaser.Scene {
     // Background
     this.cameras.main.setBackgroundColor('#2a2a2a');
 
-    // Game complete header
-    const headerText = this.add.text(
+    // Determine game over reason
+    const lives = progressManager.getLives();
+    const completedAllRounds = progress.currentRound >= 10 && lives > 0;
+
+    // Game over header (different text based on outcome)
+    const headerText = completedAllRounds
+      ? 'CAMPAIGN COMPLETE!'
+      : 'GAME OVER!';
+    const headerColor = completedAllRounds ? '#EC4899' : '#F59E0B'; // Pink for success, gold for defeat
+
+    const header = this.add.text(
       centerX,
       layout.title.y,
-      'CAMPAIGN COMPLETE!',
+      headerText,
       {
         fontSize: layout.title.fontSize,
-        color: '#EC4899', // Plasma pink
+        color: headerColor,
         fontFamily: 'Arial, sans-serif',
         fontStyle: 'bold',
         stroke: '#000000',
         strokeThickness: mobile ? 2 : 3
       }
     );
-    headerText.setOrigin(0.5, 0.5);
+    header.setOrigin(0.5, 0.5);
 
     // Animate header
     this.tweens.add({
-      targets: headerText,
+      targets: header,
       scale: { from: 0, to: 1 },
       duration: 500,
       ease: 'Back.easeOut'
@@ -164,30 +173,6 @@ export class GameOverScene extends Phaser.Scene {
         }
       ).setOrigin(0.5, 0.5);
     }
-
-    // Performance rating
-    const rating = this.getPerformanceRating(progress.totalScore);
-    const ratingText = this.add.text(
-      centerX,
-      layout.encouragement.y,
-      rating.text,
-      {
-        fontSize: layout.encouragement.fontSize,
-        color: rating.color,
-        fontFamily: 'Arial, sans-serif',
-        fontStyle: 'bold'
-      }
-    );
-    ratingText.setOrigin(0.5, 0.5);
-
-    // Animate rating
-    this.tweens.add({
-      targets: ratingText,
-      scale: { from: 0, to: 1 },
-      duration: 500,
-      delay: 2000,
-      ease: 'Back.easeOut'
-    });
 
     // Leaderboard buttons
     if (mobile) {
@@ -410,20 +395,6 @@ export class GameOverScene extends Phaser.Scene {
       bestScore,
       averageScore
     };
-  }
-
-  private getPerformanceRating(totalScore: number): { text: string; color: string } {
-    if (totalScore >= 50000) {
-      return { text: '⭐ COSMIC MASTER ⭐', color: '#EC4899' };
-    } else if (totalScore >= 35000) {
-      return { text: '🌟 STELLAR PERFORMANCE 🌟', color: '#F59E0B' };
-    } else if (totalScore >= 20000) {
-      return { text: '✨ SPACE CADET ✨', color: '#00F5FF' };
-    } else if (totalScore >= 10000) {
-      return { text: 'ROOKIE PILOT', color: '#ffffff' };
-    } else {
-      return { text: 'KEEP PRACTICING!', color: '#888888' };
-    }
   }
 
   private startNewGame(): void {

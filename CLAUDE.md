@@ -109,7 +109,10 @@ Players can spend their score between rounds on upgrades:
 **Strategic Tradeoff**: Spending score reduces your total score, so players must balance short-term power vs. long-term score goals.
 
 ### Critical UI Notes
-- **Mobile Bottom Safe Area**: RoundTransitionScene and ShopScene use sticky bottom shelves with an 80px `bottomSafeArea` constant to prevent Safari mobile UI from covering buttons. This value must be maintained when making layout changes to these scenes.
+- **Mobile Safe Areas**:
+  - **Bottom Safe Area**: All mobile scenes use dynamic `bottomSafeArea` values (iOS Safari: 60px, other mobile: 50px) to prevent mobile browser UI from covering content at the bottom. These values are configured in `ResponsiveConfig.ts`.
+  - **Top Positioning**: Mobile layouts position header elements at the very top (y: 0 for GameScene round header) to maximize use of vertical space. The canvas is aligned to the top of the viewport via CSS (`align-items: flex-start` on mobile) to eliminate empty space above the game content.
+  - **Grid Positioning**: Mobile grid positioned at offsetY: 85px to balance top header spacing with room for footer elements (Lives, Target, Timer, Score).
 
 ## Technical Implementation
 

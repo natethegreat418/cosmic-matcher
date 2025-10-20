@@ -1,5 +1,5 @@
 import * as Phaser from 'phaser';
-import { GameProgressManager } from '../game/GameProgressManager';
+import { GameProgressManager, type RoundCompletionResult } from '../game/GameProgressManager';
 import { LocalStorageManager } from '../services/LocalStorageManager';
 import { GAME_CONFIG } from '../types';
 import type { RoundResult } from '../types/Progress';
@@ -9,13 +9,15 @@ import { UIMobileShelf } from '../ui/UIMobileShelf';
 
 export class RoundTransitionScene extends Phaser.Scene {
   private roundResult?: RoundResult;
+  private completion?: RoundCompletionResult | null;
 
   constructor() {
     super({ key: 'RoundTransitionScene' });
   }
 
-  init(data: { roundResult: RoundResult }): void {
+  init(data: { roundResult: RoundResult; completion?: RoundCompletionResult | null }): void {
     this.roundResult = data.roundResult;
+    this.completion = data.completion;
   }
 
   preload(): void {
@@ -39,24 +41,33 @@ export class RoundTransitionScene extends Phaser.Scene {
     this.cameras.main.setBackgroundColor('#2a2a2a');
     this.createAbandonButton();
 
-    // Round complete header
-    const headerText = this.add.text(
+    // Determine if round was passed or failed
+    const passed = this.completion?.passed ?? true; // Default to true if no completion info
+    const isGameOver = this.completion?.isGameOver ?? false;
+
+    // Round header (different text for pass/fail)
+    const headerText = passed
+      ? `Round ${this.roundResult!.roundNumber} Complete!`
+      : `Round ${this.roundResult!.roundNumber} Failed!`;
+    const headerColor = passed ? '#00F5FF' : '#EC4899';
+
+    const header = this.add.text(
       centerX,
       layout.title.y,
-      `Round ${this.roundResult!.roundNumber} Complete!`,
+      headerText,
       {
         fontSize: layout.title.fontSize,
-        color: '#00F5FF',
+        color: headerColor,
         fontFamily: 'Arial, sans-serif',
         fontStyle: layout.title.fontWeight,
         stroke: '#000000',
         strokeThickness: mobile ? 1 : 4
       }
     );
-    headerText.setOrigin(0.5, 0.5);
+    header.setOrigin(0.5, 0.5);
 
     this.tweens.add({
-      targets: headerText,
+      targets: header,
       scale: { from: 0, to: 1 },
       duration: 500,
       ease: 'Back.easeOut'
@@ -74,10 +85,55 @@ export class RoundTransitionScene extends Phaser.Scene {
       }
     ).setOrigin(0.5, 0.5);
 
-    // Total score
-    this.add.text(
+    // Track Y position for proper spacing
+    let currentY = layout.roundScore.y + parseInt(layout.roundScore.fontSize) / 2;
+
+    // Threshold info (show if completion data available)
+    if (this.completion) {
+      const thresholdY = currentY + 32;
+      const thresholdText = passed
+        ? `Target Met: ${this.completion.threshold.toLocaleString()}`
+        : `Needed: ${this.completion.threshold.toLocaleString()} (${(this.completion.threshold - this.roundResult!.score).toLocaleString()} short)`;
+
+      this.add.text(
+        centerX,
+        thresholdY,
+        thresholdText,
+        {
+          fontSize: '18px',
+          color: passed ? '#00F5FF' : '#EC4899',
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'italic'
+        }
+      ).setOrigin(0.5, 0.5);
+
+      // Lives remaining
+      const livesY = thresholdY + 34;
+      const livesDisplay = '❤️'.repeat(this.completion.livesRemaining);
+      const livesText = passed
+        ? `Lives: ${livesDisplay} (${this.completion.livesRemaining})`
+        : `Lives Lost! ${livesDisplay} (${this.completion.livesRemaining} remaining)`;
+
+      this.add.text(
+        centerX,
+        livesY,
+        livesText,
+        {
+          fontSize: '20px',
+          color: this.completion.livesRemaining <= 1 ? '#EC4899' : '#ffffff',
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'bold'
+        }
+      ).setOrigin(0.5, 0.5);
+
+      currentY = livesY + 10; // Update position after lives
+    }
+
+    // Total score - positioned dynamically below lives
+    const totalScoreY = currentY + 38;
+    const totalScoreText = this.add.text(
       centerX,
-      layout.totalScore.y,
+      totalScoreY,
       `Total Score: ${progressManager.getTotalScore().toLocaleString()}`,
       {
         fontSize: layout.totalScore.fontSize,
@@ -85,57 +141,64 @@ export class RoundTransitionScene extends Phaser.Scene {
         fontFamily: 'Arial, sans-serif',
         fontStyle: layout.totalScore.fontWeight
       }
-    ).setOrigin(0.5, 0.5);
+    );
+    totalScoreText.setOrigin(0.5, 0.5);
 
-    // Progress indicator with larger rockets
-    this.createProgressIndicator(centerX, layout.rockets.startY);
+    // Progress indicator - position relative to total score with proper spacing
+    const rocketsY = totalScoreY + parseInt(layout.totalScore.fontSize) / 2 + 60;
+    this.createProgressIndicator(centerX, rocketsY);
 
-    // Next round preview
+    // Buttons positioned using layout config
     const nextRound = progressManager.getCurrentRound();
-    if (nextRound <= 10) {
-      const speedMultiplier = progressManager.getTimerSpeedMultiplier();
-      let speedWarning = '';
-
-      if (speedMultiplier > 1) {
-        speedWarning = ` (${speedMultiplier}x Speed!)`;
-      }
-
-      this.add.text(
-        centerX,
-        layout.nextRound.y,
-        `Next: Round ${nextRound}${speedWarning}`,
-        {
-          fontSize: layout.nextRound.fontSize,
-          color: speedMultiplier > 2 ? '#EC4899' : '#ffffff',
-          fontFamily: 'Arial, sans-serif',
-          fontStyle: speedMultiplier > 1 ? 'italic' : 'normal'
-        }
-      ).setOrigin(0.5, 0.5);
-
+    if (!isGameOver && nextRound <= 10) {
       // Buttons positioned using layout config
       if (mobile) {
         // Mobile: Stack buttons vertically in sticky bottom shelf
         const bottomSafe = getBottomSafeArea();
 
-        UIMobileShelf.create(this, {
-          bottomSafeArea: bottomSafe,
-          buttonHeight: layout.buttons.buttonHeight,
-          buttonGap: layout.buttons.gap,
-          buttons: [
-            {
-              text: 'Visit Shop',
-              variant: 'secondary',
-              fontSize: '20px',
-              onClick: () => this.scene.start('ShopScene')
-            },
-            {
-              text: 'Skip to Next Round',
-              variant: 'primary',
-              fontSize: '20px',
-              onClick: () => this.scene.start('GameScene')
-            }
-          ]
-        });
+        if (passed) {
+          // Passed: show shop and next round options
+          UIMobileShelf.create(this, {
+            bottomSafeArea: bottomSafe,
+            buttonHeight: layout.buttons.buttonHeight,
+            buttonGap: layout.buttons.gap,
+            buttons: [
+              {
+                text: 'Visit Shop',
+                variant: 'secondary',
+                fontSize: '20px',
+                onClick: () => this.scene.start('ShopScene')
+              },
+              {
+                text: 'Skip to Next Round',
+                variant: 'primary',
+                fontSize: '20px',
+                onClick: () => this.scene.start('GameScene')
+              }
+            ]
+          });
+        } else {
+          // Failed: show shop and retry options
+          UIMobileShelf.create(this, {
+            bottomSafeArea: bottomSafe,
+            buttonHeight: layout.buttons.buttonHeight,
+            buttonGap: layout.buttons.gap,
+            buttons: [
+              {
+                text: 'Visit Shop',
+                variant: 'secondary',
+                fontSize: '20px',
+                onClick: () => this.scene.start('ShopScene')
+              },
+              {
+                text: 'Try Again',
+                variant: 'primary',
+                fontSize: '20px',
+                onClick: () => this.scene.start('GameScene')
+              }
+            ]
+          });
+        }
       } else {
         // Desktop: Two buttons side by side
         const halfGap = layout.buttons.gap / 2;
@@ -154,18 +217,35 @@ export class RoundTransitionScene extends Phaser.Scene {
           onClick: () => this.scene.start('ShopScene')
         });
 
-        // Skip to Next Round button (Primary action)
+        // Continue button (Primary action)
+        const continueText = passed ? 'Skip Shop' : 'Try Again';
         UIButton.create(this, {
           x: centerX + (btnWidth + halfGap) / 2,
           y: btnY,
           width: 200,
           height: 56,
-          text: 'Skip Shop',
+          text: continueText,
           variant: 'primary',
           fontSize: '20px',
           onClick: () => this.scene.start('GameScene')
         });
       }
+    } else if (isGameOver) {
+      // Game over - out of lives
+      const btnWidth = mobile ? 180 : 200;
+      const btnHeight = mobile ? 50 : 60;
+      const buttonY = mobile ? (layout.buttons.startY || 400) : (layout.buttons.y || 400);
+
+      UIButton.create(this, {
+        x: centerX,
+        y: buttonY,
+        width: btnWidth,
+        height: btnHeight,
+        text: 'View Results',
+        variant: 'primary',
+        fontSize: layout.buttons.fontSize || '20px',
+        onClick: () => this.scene.start('GameOverScene')
+      });
     } else {
       // Game complete - single button to view results
       const btnWidth = mobile ? 180 : 200;
@@ -212,6 +292,7 @@ export class RoundTransitionScene extends Phaser.Scene {
 
   private createShipIcon(roundNum: number, x: number, y: number, currentRound: number): void {
     const baseScale = 1.0; // Ships are loaded at correct size
+    const passed = this.completion?.passed ?? true; // Check if round was passed
 
     // Determine ship type based on round speed
     let shipType: string;
@@ -234,10 +315,24 @@ export class RoundTransitionScene extends Phaser.Scene {
     // Apply tint based on completion status
     if (roundNum < currentRound) {
       ship.setTint(0xFFFFFF); // Completed - white glow (no animation)
-    } else if (roundNum === currentRound + 1 && currentRound < 10) {
+    } else if (roundNum === currentRound) {
+      ship.setTint(0xFFFFFF); // Just completed - white glow
+
+      // If failed, animate current round to indicate you need to retry
+      if (!passed) {
+        this.tweens.add({
+          targets: ship,
+          scale: { from: baseScale, to: baseScale * 1.3 },
+          duration: 500,
+          ease: 'Power2',
+          yoyo: true,
+          repeat: -1
+        });
+      }
+    } else if (roundNum === currentRound + 1 && passed && currentRound < 10) {
       ship.setTint(0xFFFFFF); // Next round - white glow with animation
 
-      // Animate next round ship (the one you're entering)
+      // If passed, animate next round to indicate this is the round you're entering
       this.tweens.add({
         targets: ship,
         scale: { from: baseScale, to: baseScale * 1.3 },
@@ -246,8 +341,6 @@ export class RoundTransitionScene extends Phaser.Scene {
         yoyo: true,
         repeat: -1
       });
-    } else if (roundNum === currentRound) {
-      ship.setTint(0xFFFFFF); // Just completed - white glow (no animation)
     } else {
       ship.setTint(0x666666); // Not reached - medium gray
       ship.setAlpha(0.5);

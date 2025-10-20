@@ -20,3 +20,10 @@ body {
   justify-content: center;
   align-items: center;
 }
+
+/* Mobile: align canvas to top to eliminate empty space above game */
+@media (max-width: 768px) {
+  #app {
+    align-items: flex-start;
+  }
+}

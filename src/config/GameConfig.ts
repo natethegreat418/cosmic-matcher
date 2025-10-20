@@ -124,6 +124,28 @@ export const TIMER_CONFIG = {
 } as const;
 
 /**
+ * Lives and round threshold configuration
+ */
+export const LIVES_CONFIG = {
+  /** Starting number of lives */
+  STARTING_LIVES: 3,
+
+  /** Minimum score required to pass each round */
+  ROUND_THRESHOLDS: [
+    { round: 1, minScore: 500 },
+    { round: 2, minScore: 600 },
+    { round: 3, minScore: 800 },
+    { round: 4, minScore: 1000 },
+    { round: 5, minScore: 1200 },
+    { round: 6, minScore: 1400 },
+    { round: 7, minScore: 1800 },
+    { round: 8, minScore: 2000 },
+    { round: 9, minScore: 2500 },
+    { round: 10, minScore: 3000 },
+  ],
+} as const;
+
+/**
  * Input and interaction configuration
  */
 export const INPUT_CONFIG = {
@@ -221,5 +243,13 @@ export const GameConfigHelpers = {
       return '#F59E0B'; // Solar Gold
     }
     return '#00F5FF'; // Bright Cyan
+  },
+
+  /**
+   * Get the minimum score threshold for a given round
+   */
+  getRoundThreshold(round: number): number {
+    const threshold = LIVES_CONFIG.ROUND_THRESHOLDS[round - 1];
+    return threshold ? threshold.minScore : 0;
   },
 };

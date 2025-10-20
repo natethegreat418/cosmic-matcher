@@ -20,13 +20,13 @@ export const getBottomSafeArea = (): number => {
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
-  // iOS Safari needs extra space for bottom bar
+  // iOS Safari needs extra space for bottom bar and gesture area
   if (isIOS && isSafari) {
-    return 110; // Increased for better clearance
+    return 60; // Moderate safe area to prevent cutoff without pushing content down
   }
 
   // Other mobile browsers
-  return 90; // Increased from 80 for better safety margin
+  return 50; // Moderate safe area
 };
 
 /**
@@ -115,7 +115,7 @@ export const getGridConfig = () => {
       tileSpacing,
       tileBorderRadius: 2,
       offsetX: horizontalPadding,
-      offsetY: 105, // Reduced from 110 to prevent footer overlap
+      offsetY: 85, // Reduced to pull grid higher and make room for footer
       gridSize: GRID_SIZE
     };
   }
@@ -140,8 +140,7 @@ export const getGridConfig = () => {
  * GameScene UI layout configuration
  */
 export const getGameSceneLayout = () => {
-  const { width, height } = getCanvasDimensions();
-  const bottomSafe = getBottomSafeArea();
+  const { width } = getCanvasDimensions();
   const gridConfig = getGridConfig();
 
   if (isMobile()) {
@@ -149,18 +148,21 @@ export const getGameSceneLayout = () => {
     const gridHeight = (8 * Math.min(50, gridConfig.tileSize)) + (7 * 6);
     const gridBottom = gridConfig.offsetY + gridHeight;
 
+    // Position timer/score closer to grid (accounting for combo text which appears dynamically)
+    const timerScoreY = gridBottom + 50; // Leave room for combo text (20px font + spacing)
+
     return {
       header: {
-        roundText: { x: width / 2, y: 25, fontSize: '28px', fontWeight: 'bold' },
-        totalScore: { x: width / 2, y: 70, fontSize: '22px', fontWeight: '600' }
+        roundText: { x: width / 2, y: 0, fontSize: '28px', fontWeight: 'bold' },
+        totalScore: { x: width / 2, y: 38, fontSize: '22px', fontWeight: '600' }
       },
       footer: {
-        timer: { x: 20, y: height - bottomSafe - 20, fontSize: '32px', fontWeight: 'bold', align: 'left' },
-        score: { x: width - 20, y: height - bottomSafe - 20, fontSize: '32px', fontWeight: 'bold', align: 'right' }
+        timer: { x: 20, y: timerScoreY, fontSize: '32px', fontWeight: 'bold', align: 'left' },
+        score: { x: width - 20, y: timerScoreY, fontSize: '32px', fontWeight: 'bold', align: 'right' }
       },
       combo: {
         x: width / 2,
-        y: gridBottom + 8, // Below grid, above footer
+        y: gridBottom + 8, // Below grid, above timer/score
         fontSize: '20px',
         fontWeight: 'bold'
       }

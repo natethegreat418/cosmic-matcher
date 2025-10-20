@@ -3,13 +3,21 @@ import type { SavedGameState } from '../types/Storage';
 import { ShopSystem } from './ShopSystem';
 import { LocalStorageManager } from '../services/LocalStorageManager';
 import { DEV_CONFIG } from '../config/DevConfig';
+import { LivesManager, type RoundCompletionResult } from '../services/LivesManager';
+import { GameConfigHelpers } from '../config/GameConfig';
+
+// Re-export for convenience
+export type { RoundCompletionResult };
 
 export class GameProgressManager {
   private static instance: GameProgressManager | null = null;
   private progress: GameProgress;
+  private livesManager: LivesManager;
+  private lastRoundCompletion: RoundCompletionResult | null = null;
 
   private constructor() {
     this.progress = this.initializeProgress();
+    this.livesManager = LivesManager.getInstance();
   }
 
   public static getInstance(): GameProgressManager {
@@ -40,6 +48,9 @@ export class GameProgressManager {
     const shopSystem = ShopSystem.getInstance();
     shopSystem.resetPurchases();
 
+    // Reset lives for new game
+    this.livesManager.reset();
+
     // Clear saved game from localStorage
     LocalStorageManager.clearSave();
   }
@@ -62,7 +73,11 @@ export class GameProgressManager {
   }
 
   public completeRound(roundScore: number): RoundResult {
-    // Save round score
+    // Check lives system before saving score
+    const livesCheck = this.livesManager.checkRoundCompletion(this.progress.currentRound, roundScore);
+    this.lastRoundCompletion = livesCheck;
+
+    // Always save round score (even if failed - it goes toward total)
     this.progress.roundScores.push(roundScore);
     this.progress.totalScore += roundScore;
     this.progress.availablePoints += roundScore;
@@ -74,12 +89,18 @@ export class GameProgressManager {
       combosAchieved: 0  // Will be set by GameState
     };
 
-    // Check if game is complete
-    if (this.progress.currentRound >= 10) {
+    // Check if game is over (ran out of lives)
+    if (livesCheck.isGameOver) {
       this.progress.isComplete = true;
-    } else {
-      this.progress.currentRound++;
+    } else if (livesCheck.passed) {
+      // Only advance to next round if passed
+      if (this.progress.currentRound >= 10) {
+        this.progress.isComplete = true;
+      } else {
+        this.progress.currentRound++;
+      }
     }
+    // If failed but still have lives, stay on same round (replay)
 
     return result;
   }
@@ -155,8 +176,31 @@ export class GameProgressManager {
     return { ...this.progress };
   }
 
+  /**
+   * Get the current number of lives remaining
+   */
+  public getLives(): number {
+    return this.livesManager.getLives();
+  }
+
+  /**
+   * Get the result of the last round completion check
+   * Returns null if no round has been completed yet
+   */
+  public getLastRoundCompletion(): RoundCompletionResult | null {
+    return this.lastRoundCompletion;
+  }
+
+  /**
+   * Get the minimum score threshold for the current round
+   */
+  public getCurrentRoundThreshold(): number {
+    return GameConfigHelpers.getRoundThreshold(this.progress.currentRound);
+  }
+
   // Reset instance for testing
   public static resetInstance(): void {
     GameProgressManager.instance = null;
+    LivesManager.resetInstance();
   }
 }

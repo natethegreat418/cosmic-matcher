@@ -38,6 +38,8 @@ export class GameScene extends Phaser.Scene {
     const currentRound = progressManager.getCurrentRound();
     const totalScore = progressManager.getTotalScore();
     const speedMultiplier = progressManager.getTimerSpeedMultiplier();
+    const lives = progressManager.getLives();
+    const threshold = progressManager.getCurrentRoundThreshold();
 
     // Auto-save before round starts (captures any shop changes)
     LocalStorageManager.saveGame();
@@ -100,21 +102,39 @@ export class GameScene extends Phaser.Scene {
         speedText.setOrigin(0.5, 0);
       }
 
-      // Total score display (if not first round)
-      if (currentRound > 1) {
-        const totalScoreText = this.add.text(
-          header.totalScore.x,
-          header.totalScore.y,
-          `Total: ${totalScore.toLocaleString()}`,
-          {
-            fontSize: header.totalScore.fontSize,
-            color: '#F59E0B',
-            fontFamily: 'Arial, sans-serif',
-            fontStyle: header.totalScore.fontWeight
-          }
-        );
-        totalScoreText.setOrigin(0.5, 0);
-      }
+      // Total score removed from mobile - shown on round summary and shop pages instead
+
+      // Lives and Target displayed at bottom (below timer/score)
+      // Position below footer timer/score
+      const { footer } = layout;
+      const livesTargetY = footer!.timer.y + 40; // Below timer/score footer
+
+      // Lives display
+      const livesDisplay = '❤️'.repeat(lives);
+      this.add.text(
+        this.cameras.main.width / 2,
+        livesTargetY,
+        `Lives: ${livesDisplay} (${lives})`,
+        {
+          fontSize: '18px',
+          color: lives <= 1 ? '#EC4899' : '#ffffff',
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'bold'
+        }
+      ).setOrigin(0.5, 0);
+
+      // Threshold display
+      this.add.text(
+        this.cameras.main.width / 2,
+        livesTargetY + 26,
+        `Target: ${threshold.toLocaleString()}`,
+        {
+          fontSize: '16px',
+          color: '#F59E0B',
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'normal'
+        }
+      ).setOrigin(0.5, 0);
     } else {
       // Desktop layout: header on left, timer/score on right
       const { header } = layout;
@@ -167,6 +187,37 @@ export class GameScene extends Phaser.Scene {
           }
         );
       }
+
+      // Lives and Target on right rail (below score/timer)
+      const rightX = this.cameras.main.width - 50;
+      const livesY = 125; // Below timer/score on right rail
+
+      // Lives display
+      const livesDisplay = '❤️'.repeat(lives);
+      this.add.text(
+        rightX,
+        livesY,
+        `Lives: ${livesDisplay}`,
+        {
+          fontSize: '20px',
+          color: lives <= 1 ? '#EC4899' : '#ffffff',
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'bold'
+        }
+      ).setOrigin(1, 0); // Right-aligned
+
+      // Threshold display
+      this.add.text(
+        rightX,
+        livesY + 32,
+        `Target: ${threshold.toLocaleString()}`,
+        {
+          fontSize: '18px',
+          color: '#F59E0B',
+          fontFamily: 'Arial, sans-serif',
+          fontStyle: 'normal'
+        }
+      ).setOrigin(1, 0); // Right-aligned
     }
 
     // Initialize game state (creates UI)
@@ -196,8 +247,11 @@ export class GameScene extends Phaser.Scene {
         roundResult.combosAchieved = this._gameState!.getTotalCombos();
         roundResult.timeRemaining = Math.floor(this._gameState!.getTimeRemaining());
 
-        // Pass round result to transition scene
-        this.scene.start('RoundTransitionScene', { roundResult });
+        // Get pass/fail information
+        const completion = progressManager.getLastRoundCompletion();
+
+        // Pass round result and completion info to transition scene
+        this.scene.start('RoundTransitionScene', { roundResult, completion });
       });
     });
   }
