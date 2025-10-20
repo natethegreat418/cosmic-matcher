@@ -1,5 +1,6 @@
 import { GameProgressManager } from './GameProgressManager';
 import { ShopSystem } from './ShopSystem';
+import { UPGRADE_EFFECTS } from '../config/GameConfig';
 
 export class UpgradeManager {
   private static instance: UpgradeManager | null = null;
@@ -22,8 +23,8 @@ export class UpgradeManager {
     // Count how many bonus_time upgrades the player has
     const bonusTimeCount = shopSystem.getItemPurchaseCount('bonus_time');
 
-    // Each bonus_time upgrade adds 10 seconds
-    const bonusTime = bonusTimeCount * 10;
+    // Each bonus_time upgrade adds seconds from config
+    const bonusTime = bonusTimeCount * UPGRADE_EFFECTS.BONUS_TIME_SECONDS;
 
     return baseTime + bonusTime;
   }
@@ -38,9 +39,8 @@ export class UpgradeManager {
     // Count how many time_dilation upgrades the player has for this round
     const dilationCount = shopSystem.getItemPurchaseCount('time_dilation');
 
-    // Each time_dilation upgrade slows the timer by 0.5 seconds per tick
-    // So instead of -1s per tick, it becomes -(1 - 0.5*count) per tick
-    return dilationCount * 0.5;
+    // Each time_dilation upgrade slows the timer by the configured amount per tick
+    return dilationCount * UPGRADE_EFFECTS.TIME_DILATION_SLOWDOWN;
   }
 
   /**

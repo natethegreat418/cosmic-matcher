@@ -31,20 +31,31 @@ src/
   │   ├── GameScene.ts               # Main game scene with round indicators
   │   ├── RoundTransitionScene.ts    # Between-round summary & shop access
   │   ├── ShopScene.ts               # Cosmic shop for upgrades
-  │   └── GameOverScene.ts           # Final game summary after 10 rounds
+  │   ├── GameOverScene.ts           # Final game summary after 10 rounds
+  │   ├── NameEntryScene.ts          # Player name entry for leaderboard
+  │   └── LeaderboardScene.ts        # High score leaderboard display
   ├── game/
-  │   ├── Grid.ts                    # Grid management with swap validation
+  │   ├── Grid.ts                    # Grid management with swap validation & match config
   │   ├── Tile.ts                    # Individual tile logic with animations
-  │   ├── MatchDetector.ts           # Match detection logic (3+ tiles)
+  │   ├── TilePool.ts                # Object pooling for tile performance
+  │   ├── MatchDetector.ts           # Match detection logic (config-driven, no singleton deps)
   │   ├── GameState.ts               # Round state with timer & scoring
   │   ├── GameProgressManager.ts     # Multi-round progression & speed scaling
   │   ├── ShopSystem.ts              # Shop inventory & purchase logic
   │   ├── UpgradeManager.ts          # Upgrade effects & calculations
   │   ├── InputManager.ts            # Input state & visual feedback
-  │   ├── DevConfig.ts               # Dev-only configuration (dev mode detection)
   │   └── DevSceneNavigator.ts       # Dev-only scene navigation & debugging tools
+  ├── config/
+  │   ├── GameConfig.ts              # Centralized game balance (scoring, shop, upgrades, timers)
+  │   ├── DevConfig.ts               # Dev-only configuration (dev mode detection)
+  │   ├── ResponsiveConfig.ts        # Responsive layout configuration
+  │   └── DesignSystem.ts            # UI styling constants
+  ├── services/
+  │   ├── LocalStorageManager.ts     # Game save/load functionality
+  │   ├── SupabaseClient.ts          # Supabase connection
+  │   └── LeaderboardService.ts      # Leaderboard API integration
   ├── types/
-  │   ├── index.ts                   # Core type definitions (tiles, config)
+  │   ├── index.ts                   # Core type definitions (tiles, config, MatchConfig)
   │   └── Progress.ts                # Progress & shop type definitions
   ├── test/
   │   ├── setup.ts                   # Vitest configuration & mocks
@@ -78,14 +89,6 @@ Complete 10 rounds of increasingly difficult gameplay, managing your score strat
   - Rounds 9-10: 3x speed (ludicrous!)
 - **Strategic Scoring**: Score is used for shop purchases, creating a risk/reward balance
 
-### Alien Characters
-- **Deep Space Blue** - Tech Engineer with backpack and visor
-- **Nebula Purple** - Mystic with crystal crown and flowing scarves
-- **Cosmic Teal** - Explorer with helmet and utility belt
-- **Solar Gold** - Commander with insignia and shoulder pads
-- **Meteor Silver** - Mechanic with goggles and wrench
-- **Plasma Pink** - Energy Being with glowing rays
-
 ### Scoring System
 - **Base Score**: 10 points per tile matched
 - **Long Match Bonus**: +50 points for each tile beyond 3 in a match
@@ -105,245 +108,150 @@ Players can spend their score between rounds on upgrades:
 
 **Strategic Tradeoff**: Spending score reduces your total score, so players must balance short-term power vs. long-term score goals.
 
-### Visual Features
-- **Responsive Design**: Optimized layouts for both desktop (900x700) and mobile devices
-  - **Mobile Bottom Safe Area**: All sticky bottom shelves (RoundTransitionScene, ShopScene) include an 80px bottom safe area to avoid Safari UI overlap on iOS
-  - **Sticky Bottom Buttons**: Mobile uses fixed-position bottom shelves with proper spacing to prevent browser UI from covering buttons
-- **Round Indicators**: Ship icons that evolve based on current speed (normal → medium → fast → ludicrous)
-- **Timer Display**: 60-second countdown with color-coded urgency
-  - Cyan: 30+ seconds
-  - Gold: 10-30 seconds
-  - Pink: <10 seconds (with pulse animation)
-- **Visual Feedback**:
-  - Cyan border for selected tiles
-  - White border for valid swap hints
-  - Smooth animations for all actions
-  - Score increase animations with pulse effects
-- **Scene Transitions**: Smooth transitions between rounds, shop, and game over screens
+### Critical UI Notes
+- **Mobile Bottom Safe Area**: RoundTransitionScene and ShopScene use sticky bottom shelves with an 80px `bottomSafeArea` constant to prevent Safari mobile UI from covering buttons. This value must be maintained when making layout changes to these scenes.
 
 ## Technical Implementation
 
 ### Architecture Overview
-The game follows a **multi-scene architecture** with **singleton pattern** for global state management:
+The game follows a **multi-scene architecture** with **centralized configuration** and **dependency injection patterns**:
 - **Scene Management**: Phaser scenes handle game flow (GameScene → RoundTransitionScene → ShopScene → repeat)
 - **State Management**: Singleton managers (GameProgressManager, ShopSystem, UpgradeManager) persist across scenes
+- **Centralized Configuration**: All game balance values in `/src/config/GameConfig.ts` (scoring, shop costs, upgrade effects, timers)
+- **Dependency Injection**: Core logic classes (MatchDetector) receive configuration rather than querying singletons at runtime
 - **Separation of Concerns**: Game logic separated from rendering, with clear interfaces between systems
+- **Test-Driven Design**: 116+ unit tests covering game logic, shop systems, and configuration helpers
 
 ### Key Classes
 
-#### Core Game Classes
+**Grid** - Creates `MatchConfig` from UpgradeManager and passes to MatchDetector. Handles tile interactions, swap validation, match processing, and cascading.
 
-**Tile Class**
+**MatchDetector** (Static utility) - Pure functional logic for match detection. All methods accept `MatchConfig` parameter. No singleton dependencies.
 ```typescript
-export class Tile {
-  public sprite: Phaser.GameObjects.Image;
-  public backgroundRect: Phaser.GameObjects.Rectangle;
-  public color: TileColor;
-
-  // Animation methods (Promise-based for sequencing)
-  animateToPosition(gridX: number, gridY: number): Promise<void>;
-  animateRemoval(): Promise<void>;
-  animateDropIn(fromY: number): Promise<void>;
-
-  // Visual states
-  setSelected(): void;  // Cyan highlight
-  setHint(): void;      // White highlight
-  unhighlight(): void;  // Normal state
-}
+static findMatches(tiles: (Tile | null)[][], config: MatchConfig): MatchGroup[];
+static wouldSwapCreateMatch(tiles, pos1, pos2, config: MatchConfig): boolean;
+static areAdjacent(pos1, pos2, config: MatchConfig): boolean;
 ```
 
-**Grid Class**
-```typescript
-export class Grid {
-  public tiles: (Tile | null)[][];
+**GameProgressManager** (Singleton) - Manages multi-round progression, score/points, upgrade tracking, and speed multipliers (1x to 3x).
 
-  // Core functionality
-  private async handleTileClick(tile: Tile): Promise<void>;
-  private async attemptSwap(pos1: TilePosition, pos2: TilePosition): Promise<void>;
-  private async processMatches(): Promise<void>;
+**ShopSystem** (Singleton) - Shop inventory and purchase logic. Uses `GameConfigHelpers.calculateItemCost()` for dynamic pricing.
 
-  // Match-3 mechanics with cascading
-  private async removeMatches(matches: TilePosition[][]): Promise<void>;
-  private async dropTiles(): Promise<void>;
-  private async fillEmptySpaces(): Promise<void>;
+**UpgradeManager** (Singleton) - Tracks owned upgrades and calculates their effects (time bonuses, slowdown).
 
-  // Lifecycle
-  public hideGrid(): void;
-  public destroy(): void;
-}
-```
+**GameState** - Per-round state (timer, score, combos). Uses centralized `SCORING` config for calculations.
 
-**GameState Class** (Per-Round State)
-```typescript
-export class GameState {
-  // Round-specific state
-  private timeRemaining: number;      // Display time (starts at 60)
-  private actualTimeElapsed: number;  // Real time for speed calculation
-  private score: number;
-  private currentCombo: number;
-  private speedMultiplier: number;    // From GameProgressManager
-
-  // Scoring with upgrade support
-  public addMatchScore(matchGroups: any[][], cascadeNumber: number): void;
-  private addBonusTime(seconds: number): void;
-
-  // UI management with responsive positioning
-  private updateTimerDisplay(): void;
-  private animateScoreIncrease(from: number, to: number): void;
-
-  // Lifecycle
-  public setGameOverCallback(callback: () => void): void;
-  public getScore(): number;
-  public getTotalCombos(): number;
-}
-```
-
-**MatchDetector Class** (Static utility)
-```typescript
-export class MatchDetector {
-  static findMatches(tiles: (Tile | null)[][]): TilePosition[][];
-  static wouldSwapCreateMatch(tiles, pos1, pos2): boolean;
-  static areAdjacent(pos1: TilePosition, pos2: TilePosition): boolean;
-}
-```
-
-#### Progression & Shop System (Singletons)
-
-**GameProgressManager** (Global Game State)
-```typescript
-export class GameProgressManager {
-  private progress: GameProgress;  // Persists across rounds
-
-  // Round management
-  public completeRound(roundScore: number): RoundResult;
-  public getCurrentRound(): number;
-  public getRoundTimer(): number;  // 60 seconds in production, 15 in dev
-  public getTimerSpeedMultiplier(): number;  // 1x to 3x based on round
-
-  // Score & points management
-  public getTotalScore(): number;
-  public getAvailablePoints(): number;
-  public spendPoints(cost: number): boolean;  // Returns success
-  public canAfford(cost: number): boolean;
-
-  // Upgrade tracking
-  public addUpgrade(upgradeId: string): void;
-  public getOwnedUpgrades(): string[];
-
-  // Game completion
-  public isGameComplete(): boolean;
-  public startNewGame(): void;
-}
-```
-
-**ShopSystem** (Shop Inventory & Purchases)
-```typescript
-export class ShopSystem {
-  private items: ShopItem[];
-
-  // Shop interface
-  public getAvailableItems(): ShopItem[];
-  public getAllItems(): ShopItem[];
-  public purchaseItem(itemId: string): PurchaseResult;
-  public getItemCost(itemId: string): number;  // Scales with purchase count
-
-  // Upgrade lifecycle
-  public consumeTimeUpgrades(): void;  // Called after applying to round
-  public resetPurchases(): void;       // Called on new game
-}
-```
-
-**UpgradeManager** (Upgrade Effects)
-```typescript
-export class UpgradeManager {
-  // Apply upgrade effects to game mechanics
-  public applyTimeBonus(baseTime: number): number;
-  public getTimerSlowdown(): number;  // From time dilation
-
-  // Query upgrade state
-  public hasUpgrade(upgradeId: string): boolean;
-  public getUpgradeCount(upgradeId: string): number;
-}
-```
-
-#### Scene Classes
-
-**GameScene** - Main gameplay with round indicator and speed warnings
-**RoundTransitionScene** - Round summary with stats and shop button
-**ShopScene** - Shop UI with purchase logic and item display
-**GameOverScene** - Final summary after 10 rounds complete
+**Scenes**: GameScene, RoundTransitionScene, ShopScene, GameOverScene, NameEntryScene, LeaderboardScene
 
 ### Configuration
 
-**Responsive Configuration System**
+**Centralized Game Balance Configuration (src/config/GameConfig.ts)**
+
+All game balance values, costs, and mechanics are centralized in a single configuration file for easy tuning:
+
 ```typescript
-// Dynamic configuration based on device
-const getTileConfig = () => {
-  if (isMobile()) {
-    // Calculates optimal tile size for mobile screens
-    // Caps at 50px to prevent oversized tiles
-    return { tileSize: calculated, offsetX: 10, offsetY: 80 };
-  }
-  // Desktop: Centers grid in 900px canvas
-  return { tileSize: 60, offsetX: 196, offsetY: 120 };
+// Scoring rules
+export const SCORING = {
+  BASE_TILE_SCORE: 10,
+  COMBO_MULTIPLIER: 1.5,
+  LONG_MATCH_BONUS: 50,
+  TIME_BONUS_THRESHOLD: 5,
+  COMBO_BONUS_TIME_SECONDS: 2,
 };
 
-export const GAME_CONFIG = {
-  GRID_WIDTH: 8,
-  GRID_HEIGHT: 8,
-  TILE_SIZE: dynamic,            // 60px desktop, ≤50px mobile
-  TILE_SPACING: 4,
-  COLORS: [6 alien types] as const,
-  ANIMATION_DURATION: 300,
-  BOARD_OFFSET_X: dynamic,       // Centers grid on viewport
-  BOARD_OFFSET_Y: dynamic,
-  IS_MOBILE: boolean             // Device detection flag
+// Shop items with base costs
+export const SHOP_ITEMS = {
+  bonus_time: {
+    id: 'bonus_time',
+    name: 'Radiation Shield',
+    baseCost: 150,
+    maxPurchases: 5,
+    // ...
+  },
+  // ... other items
+};
+
+// Upgrade effect values
+export const UPGRADE_EFFECTS = {
+  BONUS_TIME_SECONDS: 10,
+  TIME_DILATION_SLOWDOWN: 0.5,
+  TRACTOR_BEAM_DISTANCE: 2,
+  DEFAULT_SWAP_DISTANCE: 1,
+};
+
+// Timer configuration
+export const TIMER_CONFIG = {
+  PRODUCTION_ROUND_TIMER: 60,
+  DEV_ROUND_TIMER: 15,
+  SPEED_MULTIPLIERS: {
+    rounds_1_2: 1.0,
+    rounds_3_4: 1.5,
+    rounds_5_6: 2.0,
+    rounds_7_8: 2.5,
+    rounds_9_10: 3.0,
+  },
+  COLOR_THRESHOLDS: {
+    DANGER: 10,
+    WARNING: 30,
+  },
+};
+
+// Helper functions for calculations
+export const GameConfigHelpers = {
+  getSpeedMultiplier(round: number): number;
+  calculateItemCost(itemId, purchaseCount): number;
+  getBaseRoundTimer(isDev): number;
+  getTimerColor(secondsRemaining): string;
 };
 ```
 
-**Type Definitions**
-```typescript
-// Progress tracking
-export interface GameProgress {
-  currentRound: number;        // 1-10
-  totalScore: number;          // Sum of all rounds
-  roundScores: number[];       // Individual round scores
-  availablePoints: number;     // Score available for shop
-  spentPoints: number;         // Total spent in shop
-  ownedUpgrades: string[];     // Purchased upgrade IDs
-  isComplete: boolean;         // All 10 rounds finished
-}
+**Benefits:**
+- Single source of truth for all game balance
+- Easy to tune values without hunting through code
+- Configuration can be tested independently
+- Shop costs and upgrade effects clearly documented
+- Helper functions encapsulate calculation logic
 
-// Shop items
-export interface ShopItem {
-  id: string;
-  name: string;
-  description: string;
-  cost: number;                // Base cost (scales with purchases)
-  maxPurchases: number;        // Purchase limit
-  purchaseCount: number;       // Times purchased
-  icon?: string;
-}
-```
+**Type Definitions**: See `/src/types/index.ts` for `MatchConfig`, `GameProgress`, `ShopItem`, and other interfaces.
 
 ## Development Guidelines
 
 ### Architecture Patterns
-- **Singleton Pattern**: GameProgressManager, ShopSystem, UpgradeManager persist across scenes
+- **Centralized Configuration**: All game balance values in `/src/config/GameConfig.ts`
+  - Single source of truth for scoring, shop costs, upgrade effects, timers
+  - Easy to modify game balance without hunting through code
+  - Configuration values are testable independently
+  - Helper functions encapsulate calculation logic
+
+- **Dependency Injection**: Core logic receives config instead of querying singletons
+  - `MatchDetector` receives `MatchConfig` parameter (no UpgradeManager dependency)
+  - `Grid` creates config once and passes to MatchDetector
+  - Makes logic pure and testable without mocking
+  - Improves performance by eliminating runtime singleton lookups
+
+- **Singleton Pattern**: State managers persist across scenes
+  - GameProgressManager, ShopSystem, UpgradeManager
   - Ensures single source of truth for game state
   - `getInstance()` pattern with private constructors
   - `resetInstance()` methods for testing
+
 - **Scene-Based Flow**: Phaser's built-in scene management for game flow
   - Data passing via `scene.start(sceneName, data)`
   - Scene lifecycle (preload → create → update → shutdown)
+
 - **Separation of Concerns**:
   - Game logic separated from Phaser rendering
   - Managers handle state, scenes handle presentation
   - Grid handles tile interactions, GameState handles scoring/timer
+  - Configuration separated from implementation
+
 - **Promise-Based Animations**: All animations return promises for proper sequencing
   - Enables complex cascading match sequences
   - Prevents race conditions during tile swaps
+
 - **Type Safety**: Full TypeScript coverage with strict mode
+  - 116+ unit tests covering all game logic
+  - No `any` types in core logic
 
 ### Game Flow Architecture
 ```
@@ -412,7 +320,7 @@ GameOverScene (after Round 10)
 
 **IMPORTANT: All dev features below are ONLY active in local development (`npm run dev`). They are completely disabled in production builds.**
 
-#### Dev Configuration (src/game/DevConfig.ts)
+#### Dev Configuration (src/config/DevConfig.ts)
 
 The `DEV_CONFIG` provides enhanced debugging capabilities:
 
@@ -448,26 +356,7 @@ http://localhost:5173?scene=game&round=3&points=5000
 - `score` - Total score
 - `upgrades` - Comma-separated upgrade IDs (phase_gun, tractor_beam, bonus_time, time_dilation)
 
-**Browser Console Commands** (Available via `window.debugNav`):
-```javascript
-// Navigate to scenes
-debugNav.goToScene('shop')        // Open shop scene
-debugNav.goToScene('gameover')    // Open game over scene
-debugNav.goToScene('transition')  // Open round transition
-debugNav.goToScene('game')        // Start gameplay
-
-// Manipulate game state
-debugNav.setRound(7)              // Jump to round 7
-debugNav.setPoints(10000)         // Set available points
-debugNav.addPoints(500)           // Add points to current total
-debugNav.setScore(15000)          // Set total score
-debugNav.addUpgrade('phase_gun')  // Grant an upgrade
-
-// Utilities
-debugNav.showState()              // Display current game state
-debugNav.help()                   // Show all available commands
-debugNav.reset()                  // Reset game state and reload
-```
+**Browser Console**: `window.debugNav` provides methods like `goToScene()`, `setRound()`, `addUpgrade()`, `showState()`, and `help()`.
 
 #### UI Verification with MCP Chrome DevTools
 
@@ -558,42 +447,40 @@ mcp__chrome-devtools__list_console_messages()
 - ✅ Screenshot documentation of UI states
 
 ### Testing Strategy
+
+#### Unit Testing (Vitest)
 - **Unit Tests**: Focus on pure logic without Phaser dependencies
-  - MatchDetector (match detection, swap validation)
+  - MatchDetector (match detection, swap validation, config-driven)
+  - GameConfigHelpers (speed multipliers, cost scaling, timer colors)
   - GameProgressManager (round progression, scoring)
-  - ShopSystem (purchases, cost calculations)
+  - ShopSystem (purchases, cost calculations, state management)
   - UpgradeManager (effect calculations)
 - **Test Helpers**: Use `TileFactory` for creating mock game state
 - **Mocking**: Tile class is mocked to avoid Phaser dependencies in tests
 - **Coverage Goals**: All game logic should have unit tests
+- **Current Coverage**: 116+ tests across 7 test files
 
-### Visual Polish
-- **Smooth Animations**:
-  - Tile movements, removals, and drop-ins
-  - Score counter animations with easing
-  - Pulse effects for urgency (timer, combos)
-- **Color-Coded UI**:
-  - Timer changes color based on remaining time (cyan → gold → pink)
-  - Consistent alien color palette across UI
-- **Visual Feedback**:
-  - Selected tiles (cyan border)
-  - Valid swap hints (white border)
-  - Combo text animations
-  - Bonus time pop-ups
-- **Responsive Layout**:
-  - Desktop: UI positioned right of grid
-  - Mobile: UI positioned below grid
-  - Dynamic font sizes and spacing
-  - **CRITICAL - Mobile Bottom Shelf**: RoundTransitionScene and ShopScene use sticky bottom shelves with an 80px `bottomSafeArea` constant to prevent Safari mobile UI from covering buttons. This value must be maintained when making layout changes to these scenes.
+#### End-to-End Testing (MCP Chrome DevTools)
 
-### Performance & Best Practices
-- **Efficient Match Detection**: O(n) grid scanning for matches
-- **Batched Animations**: Multiple tiles animate simultaneously using Phaser tweens
-- **Memory Management**:
-  - Proper cleanup of game objects in `destroy()` methods
-  - Scene shutdown handlers for state cleanup
-  - Tween completion callbacks for object destruction
-- **State Management**:
-  - Singleton managers prevent duplicate state
-  - Scene data passing for context preservation
-  - Clear separation between round state (GameState) and global state (GameProgressManager)
+**When to Run E2E Tests:**
+- After refactoring core game logic or configuration
+- Before committing significant changes
+- To verify visual UI changes in browser
+
+**E2E Test Workflow:**
+
+1. Start dev server: `npm run dev`
+2. Navigate to game homepage and start new game
+3. Use `window.debugNav.goToScene('shop')` to test shop with points
+4. Verify shop costs match `GameConfig.SHOP_ITEMS` values
+5. Add upgrades via `debugNav.addUpgrade('phase_gun')` and test integration
+6. Test speed multipliers at round 9 (verify "3x Speed!" messaging)
+7. Check console for errors with `mcp__chrome-devtools__list_console_messages()`
+
+**MCP Tools**: Use `navigate_page()`, `take_screenshot()`, `evaluate_script()`, `list_console_messages()` for testing.
+
+**Common Test URLs:**
+- Shop: `?scene=shop&round=3&points=10000`
+- Game Over: `?scene=gameover&round=10&score=50000&upgrades=phase_gun`
+
+**Note**: `getBoundingClientRect` errors in console are from MCP DevTools interacting with Phaser canvas, not game errors.

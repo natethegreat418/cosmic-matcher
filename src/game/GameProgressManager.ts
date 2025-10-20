@@ -2,7 +2,7 @@ import type { GameProgress, RoundResult } from '../types/Progress';
 import type { SavedGameState } from '../types/Storage';
 import { ShopSystem } from './ShopSystem';
 import { LocalStorageManager } from '../services/LocalStorageManager';
-import { DEV_CONFIG } from './DevConfig';
+import { DEV_CONFIG } from '../config/DevConfig';
 
 export class GameProgressManager {
   private static instance: GameProgressManager | null = null;

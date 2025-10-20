@@ -4,6 +4,7 @@ import { UpgradeManager } from './UpgradeManager';
 import { ShopSystem } from './ShopSystem';
 import { GAME_CONFIG, type MatchGroup } from '../types';
 import { getGameSceneLayout, isMobile } from '../config/ResponsiveConfig';
+import { SCORING, TIMER_CONFIG, GameConfigHelpers } from '../config/GameConfig';
 
 /**
  * Manages the game state including score, timer, combos, and UI updates
@@ -28,12 +29,6 @@ export class GameState {
   private gameOverText?: Phaser.GameObjects.Text;
 
   private scene: Phaser.Scene;
-
-  // Score values for different actions
-  private readonly BASE_TILE_SCORE = 10;
-  private readonly COMBO_MULTIPLIER = 1.5;
-  private readonly LONG_MATCH_BONUS = 50; // Bonus for 4+ matches
-  private readonly TIME_BONUS_THRESHOLD = 5; // Combos of 5+ give time bonus
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -236,10 +231,11 @@ export class GameState {
     this.timerText.setText(this.formatTime(this.timeRemaining));
 
     // Color coding based on remaining time
-    if (this.timeRemaining <= 10) {
-      this.timerText.setColor('#EC4899'); // Plasma Pink for danger
+    const timerColor = GameConfigHelpers.getTimerColor(this.timeRemaining);
+    this.timerText.setColor(timerColor);
 
-      // Pulse animation for urgency
+    // Pulse animation for urgency when in danger zone
+    if (this.timeRemaining <= TIMER_CONFIG.COLOR_THRESHOLDS.DANGER) {
       this.scene.tweens.add({
         targets: this.timerText,
         scaleX: 1.1,
@@ -248,10 +244,6 @@ export class GameState {
         ease: 'Power2.easeOut',
         yoyo: true
       });
-    } else if (this.timeRemaining <= 30) {
-      this.timerText.setColor('#F59E0B'); // Solar Gold for warning
-    } else {
-      this.timerText.setColor('#00F5FF'); // Bright cyan for normal
     }
   }
 
@@ -268,26 +260,26 @@ export class GameState {
       const tileCount = group.length;
 
       // Base score for each tile
-      matchScore += tileCount * this.BASE_TILE_SCORE;
+      matchScore += tileCount * SCORING.BASE_TILE_SCORE;
 
       // Bonus for long matches (4+ tiles)
       if (tileCount >= 4) {
-        matchScore += this.LONG_MATCH_BONUS * (tileCount - 3);
+        matchScore += SCORING.LONG_MATCH_BONUS * (tileCount - 3);
         console.log(`Long match bonus! ${tileCount} tiles (${group.direction}) in a row!`);
       }
     });
 
     // Apply cascade combo multiplier
     if (cascadeNumber > 1) {
-      const multiplier = Math.pow(this.COMBO_MULTIPLIER, cascadeNumber - 1);
+      const multiplier = Math.pow(SCORING.COMBO_MULTIPLIER, cascadeNumber - 1);
       matchScore = Math.round(matchScore * multiplier);
 
       this.currentCombo = cascadeNumber;
       this.updateComboDisplay();
 
       // Award bonus time for big combos!
-      if (cascadeNumber >= this.TIME_BONUS_THRESHOLD) {
-        const bonusTime = (cascadeNumber - this.TIME_BONUS_THRESHOLD + 1) * 2; // 2 seconds per combo level above threshold
+      if (cascadeNumber >= SCORING.TIME_BONUS_THRESHOLD) {
+        const bonusTime = (cascadeNumber - SCORING.TIME_BONUS_THRESHOLD + 1) * SCORING.COMBO_BONUS_TIME_SECONDS;
         this.addBonusTime(bonusTime);
       }
 

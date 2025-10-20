@@ -19,7 +19,7 @@
  * - reset()
  */
 
-import { DEV_CONFIG } from './DevConfig';
+import { DEV_CONFIG } from '../config/DevConfig';
 import { GameProgressManager } from './GameProgressManager';
 import { ShopSystem } from './ShopSystem';
 import { UpgradeManager } from './UpgradeManager';

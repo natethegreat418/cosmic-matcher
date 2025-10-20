@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { LocalStorageManager } from './LocalStorageManager';
 import { GameProgressManager } from '../game/GameProgressManager';
 import { ShopSystem } from '../game/ShopSystem';
-import { DEV_CONFIG } from '../game/DevConfig';
+import { DEV_CONFIG } from '../config/DevConfig';
 
 describe('LocalStorageManager', () => {
   beforeEach(() => {

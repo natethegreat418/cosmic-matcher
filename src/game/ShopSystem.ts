@@ -1,5 +1,6 @@
 import type { ShopItem, PurchaseResult } from '../types/Progress';
 import { GameProgressManager } from './GameProgressManager';
+import { SHOP_ITEMS, GameConfigHelpers } from '../config/GameConfig';
 
 export class ShopSystem {
   private static instance: ShopSystem | null = null;
@@ -17,44 +18,16 @@ export class ShopSystem {
   }
 
   private initializeItems(): void {
-    this.items = [
-      {
-        id: 'bonus_time',
-        name: 'Radiation Shield',
-        description: '+10 seconds to next round',
-        cost: 150,
-        maxPurchases: 5, // Allow multiple purchases but at increasing cost
-        purchaseCount: 0,
-        icon: '/shop/radiation-shield.png'
-      },
-      {
-        id: 'time_dilation',
-        name: 'Quantum Time Dilation',
-        description: 'Slows countdown by 0.5s per tick (one round)',
-        cost: 500,
-        maxPurchases: 5, // Single-use per round, but can stack
-        purchaseCount: 0,
-        icon: '/shop/quantum-dilation.png'
-      },
-      {
-        id: 'phase_gun',
-        name: 'Phase Gun',
-        description: 'Enables diagonal 3-tile matches',
-        cost: 3200,
-        maxPurchases: 1, // Permanent upgrade, one-time purchase
-        purchaseCount: 0,
-        icon: '/shop/phaser.png'
-      },
-      {
-        id: 'tractor_beam',
-        name: 'Tractor Beam',
-        description: 'Swap tiles from 2 spaces away',
-        cost: 1800,
-        maxPurchases: 1, // Permanent upgrade, one-time purchase
-        purchaseCount: 0,
-        icon: '/shop/tractor-beam.png'
-      }
-    ];
+    // Initialize items from centralized config
+    this.items = Object.values(SHOP_ITEMS).map(itemConfig => ({
+      id: itemConfig.id,
+      name: itemConfig.name,
+      description: itemConfig.description,
+      cost: itemConfig.baseCost,
+      maxPurchases: itemConfig.maxPurchases,
+      purchaseCount: 0,
+      icon: itemConfig.icon,
+    }));
   }
 
   public getAvailableItems(): ShopItem[] {
@@ -103,8 +76,8 @@ export class ShopSystem {
     const item = this.items.find(i => i.id === itemId);
     if (!item) return 0;
 
-    // Base cost increases by 50% with each purchase for game balance
-    return Math.round(item.cost * Math.pow(1.5, item.purchaseCount));
+    // Use centralized cost calculation from GameConfig
+    return GameConfigHelpers.calculateItemCost(itemId as keyof typeof SHOP_ITEMS, item.purchaseCount);
   }
 
   public getItemPurchaseCount(itemId: string): number {

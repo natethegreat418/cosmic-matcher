@@ -60,3 +60,14 @@ export interface MatchStats {
   totalScore: number;
   longestMatch: number;
 }
+
+/**
+ * Configuration for match detection behavior
+ * Passed to MatchDetector instead of querying upgrades directly
+ */
+export interface MatchConfig {
+  /** Whether diagonal matches are enabled (Phase Gun upgrade) */
+  allowDiagonals: boolean;
+  /** Maximum distance for tile swaps (1 = adjacent, 2 = Tractor Beam) */
+  maxSwapDistance: number;
+}

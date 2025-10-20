@@ -10,7 +10,7 @@ import { LocalStorageManager } from './services/LocalStorageManager';
 import { GameProgressManager } from './game/GameProgressManager';
 import { ShopSystem } from './game/ShopSystem';
 import { getCanvasDimensions } from './config/ResponsiveConfig';
-import { DEV_CONFIG } from './game/DevConfig';
+import { DEV_CONFIG } from './config/DevConfig';
 import { DevSceneNavigator } from './game/DevSceneNavigator';
 
 const dimensions = getCanvasDimensions();

@@ -4,8 +4,10 @@ import { TilePool } from './TilePool';
 import { MatchDetector } from './MatchDetector';
 import { GameState } from './GameState';
 import { InputManager } from './InputManager';
-import type { TileColor, TilePosition, MatchGroup } from '../types';
+import { UpgradeManager } from './UpgradeManager';
+import type { TileColor, TilePosition, MatchGroup, MatchConfig } from '../types';
 import { GAME_CONFIG } from '../types';
+import { INPUT_CONFIG, GRID_CONFIG, GAME_ANIMATIONS, UPGRADE_EFFECTS } from '../config/GameConfig';
 
 export class Grid {
   public tiles: (Tile | null)[][];
@@ -18,6 +20,7 @@ export class Grid {
   private swipeStartTile: Tile | null = null;
   private swipeStartX: number = 0;
   private swipeStartY: number = 0;
+  private matchConfig: MatchConfig;
 
   constructor(width: number, height: number, scene: Phaser.Scene, gameState: GameState) {
     this.gridWidth = width;
@@ -31,9 +34,27 @@ export class Grid {
       Array.from({ length: width }, () => null)
     );
 
+    // Initialize match config based on current upgrades
+    this.matchConfig = this.createMatchConfig();
+
     this.initializeGrid();
     this.setupClickHandlers();
     this.setupSwipeHandlers();
+  }
+
+  /**
+   * Creates match configuration based on current upgrade state
+   * This decouples MatchDetector from UpgradeManager
+   */
+  private createMatchConfig(): MatchConfig {
+    const upgradeManager = UpgradeManager.getInstance();
+
+    return {
+      allowDiagonals: upgradeManager.hasUpgrade('phase_gun'),
+      maxSwapDistance: upgradeManager.hasUpgrade('tractor_beam')
+        ? UPGRADE_EFFECTS.TRACTOR_BEAM_DISTANCE
+        : UPGRADE_EFFECTS.DEFAULT_SWAP_DISTANCE,
+    };
   }
 
   /**
@@ -45,13 +66,12 @@ export class Grid {
       for (let col = 0; col < this.gridWidth; col++) {
         let color: TileColor;
         let attempts = 0;
-        const maxAttempts = 20;
 
         // Try to find a color that doesn't create immediate matches
         do {
           color = this.getRandomColor();
           attempts++;
-        } while (attempts < maxAttempts && this.wouldCreateInitialMatch(row, col, color));
+        } while (attempts < GRID_CONFIG.MAX_COLOR_ATTEMPTS && this.wouldCreateInitialMatch(row, col, color));
 
         const tile = this.tilePool.acquire(col, row, color);
         this.tiles[row][col] = tile;
@@ -118,10 +138,9 @@ export class Grid {
       if (this.swipeStartTile && !this.inputManager.isInputLocked() && !this.gameState.getIsGameOver()) {
         const deltaX = pointer.x - this.swipeStartX;
         const deltaY = pointer.y - this.swipeStartY;
-        const minSwipeDistance = 30; // Minimum pixels for a swipe
 
         // Check if movement is significant enough to be a swipe
-        if (Math.abs(deltaX) > minSwipeDistance || Math.abs(deltaY) > minSwipeDistance) {
+        if (Math.abs(deltaX) > INPUT_CONFIG.MIN_SWIPE_DISTANCE || Math.abs(deltaY) > INPUT_CONFIG.MIN_SWIPE_DISTANCE) {
           this.handleSwipe(this.swipeStartTile, deltaX, deltaY);
         }
 
@@ -201,8 +220,8 @@ export class Grid {
       return;
     }
 
-    // Check if tiles are adjacent
-    if (!this.inputManager.areAdjacent(firstPos, secondPos)) {
+    // Check if tiles are adjacent (using match config for distance)
+    if (!MatchDetector.areAdjacent(firstPos, secondPos, this.matchConfig)) {
       // Not adjacent - just switch selection to the new tile
       this.inputManager.setSelectedTile(tile);
       this.clearHints();
@@ -251,7 +270,7 @@ export class Grid {
     adjacentPositions.forEach(pos => {
       if (this.isValidPosition(pos.row, pos.col)) {
         // Check if swapping would create a match
-        if (MatchDetector.wouldSwapCreateMatch(this.tiles, selectedPos, pos)) {
+        if (MatchDetector.wouldSwapCreateMatch(this.tiles, selectedPos, pos, this.matchConfig)) {
           const adjacentTile = this.tiles[pos.row][pos.col];
           if (adjacentTile) {
             adjacentTile.setHint();
@@ -298,7 +317,7 @@ export class Grid {
     this.inputManager.clearSelection();
 
     // Check if this swap would create a match
-    const wouldCreateMatch = MatchDetector.wouldSwapCreateMatch(this.tiles, pos1, pos2);
+    const wouldCreateMatch = MatchDetector.wouldSwapCreateMatch(this.tiles, pos1, pos2, this.matchConfig);
 
     if (!wouldCreateMatch) {
       // Invalid swap - use InputManager's shake animation
@@ -366,7 +385,7 @@ export class Grid {
 
     // Keep processing matches until no more are found
     while (matchesFound) {
-      const matches = MatchDetector.findMatches(this.tiles);
+      const matches = MatchDetector.findMatches(this.tiles, this.matchConfig);
 
       if (matches.length === 0) {
         matchesFound = false;
@@ -389,7 +408,7 @@ export class Grid {
       await this.fillEmptySpaces();
 
       // Brief pause between cascades for visual clarity
-      await this.delay(200);
+      await this.delay(GAME_ANIMATIONS.CASCADE_PAUSE);
     }
 
     console.log(`Match processing complete! Total cascades: ${cascadeCount}`);
@@ -531,7 +550,7 @@ export class Grid {
           this.scene.tweens.add({
             targets: targets,
             alpha: 0,
-            duration: 500,
+            duration: GAME_ANIMATIONS.GRID_HIDE,
             ease: 'Power2.easeOut'
           });
         }

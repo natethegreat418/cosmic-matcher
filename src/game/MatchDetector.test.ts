@@ -19,13 +19,20 @@ vi.mock('./Tile', () => {
 
 import { MatchDetector } from './MatchDetector';
 import { TileFactory } from '../test/helpers/TileFactory';
-import { UpgradeManager } from './UpgradeManager';
+import type { MatchConfig } from '../types';
 
 describe('MatchDetector', () => {
-  // Reset UpgradeManager singleton before each test
-  beforeEach(() => {
-    UpgradeManager.resetInstance();
-  });
+  // Default config for testing (no upgrades)
+  const defaultConfig: MatchConfig = {
+    allowDiagonals: false,
+    maxSwapDistance: 1,
+  };
+
+  // Config with all upgrades enabled
+  const upgradesConfig: MatchConfig = {
+    allowDiagonals: true,
+    maxSwapDistance: 2,
+  };
 
   afterEach(() => {
     vi.restoreAllMocks();
@@ -38,7 +45,7 @@ describe('MatchDetector', () => {
         ['P', 'T', 'G', 'S', 'K', 'R', 'P', 'T'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toHaveLength(1);
       expect(matches[0].tiles).toHaveLength(3);
@@ -53,7 +60,7 @@ describe('MatchDetector', () => {
         ['P', 'T', 'G', 'S', 'K', 'R', 'P', 'T'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toHaveLength(1);
       expect(matches[0].tiles).toHaveLength(4);
@@ -66,7 +73,7 @@ describe('MatchDetector', () => {
         ['P', 'T', 'G', 'S', 'K', 'R', 'P', 'T'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toHaveLength(1);
       expect(matches[0].tiles).toHaveLength(5);
@@ -79,7 +86,7 @@ describe('MatchDetector', () => {
         ['T', 'G', 'S', 'K', 'K', 'K', 'P', 'T'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toHaveLength(3);
       expect(matches.every(m => m.direction === 'horizontal')).toBe(true);
@@ -90,7 +97,7 @@ describe('MatchDetector', () => {
         ['P', 'T', 'G', 'S', 'K', 'R', 'R', 'R'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toHaveLength(1);
       expect(matches[0].tiles[0]).toEqual({ row: 0, col: 5 });
@@ -105,7 +112,7 @@ describe('MatchDetector', () => {
         ['R', 'G', 'S', 'K', 'R', 'P', 'T', 'G'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toHaveLength(1);
       expect(matches[0].tiles).toHaveLength(3);
@@ -121,7 +128,7 @@ describe('MatchDetector', () => {
         ['R', 'S', 'K', 'R', 'P', 'T', 'G', 'S'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toHaveLength(1);
       expect(matches[0].tiles).toHaveLength(4);
@@ -134,7 +141,7 @@ describe('MatchDetector', () => {
         ['R', 'P', 'S', 'K', 'R', 'P', 'T', 'G'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toHaveLength(2);
       expect(matches.every(m => m.direction === 'vertical')).toBe(true);
@@ -149,7 +156,7 @@ describe('MatchDetector', () => {
         ['T', 'G', 'S', 'G', 'R', 'P', 'T', 'G'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toHaveLength(2);
       const directions = matches.map(m => m.direction);
@@ -164,7 +171,7 @@ describe('MatchDetector', () => {
         ['T', 'R', 'S', 'K', 'R', 'P', 'T', 'G'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches.length).toBeGreaterThanOrEqual(2);
     });
@@ -177,7 +184,7 @@ describe('MatchDetector', () => {
         [null, null, null],
       ];
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toEqual([]);
     });
@@ -188,7 +195,7 @@ describe('MatchDetector', () => {
         ['P', 'R', 'P', 'R', 'P', 'R', 'P', 'R'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toEqual([]);
     });
@@ -199,7 +206,7 @@ describe('MatchDetector', () => {
         ['P', 'T', 'G', 'S', 'K', 'R', 'P', 'T'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toEqual([]);
     });
@@ -209,7 +216,7 @@ describe('MatchDetector', () => {
         ['R', 'R', 'P', 'T', 'G', 'S', 'K', 'P'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       expect(matches).toEqual([]);
     });
@@ -220,7 +227,7 @@ describe('MatchDetector', () => {
         ['R', 'R', 'R', 'R', 'R', 'R', 'R', 'R'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       // Should detect both horizontal matches (2 rows) and vertical matches (8 columns)
       expect(matches.length).toBeGreaterThan(0);
@@ -238,7 +245,7 @@ describe('MatchDetector', () => {
       const pos2 = { row: 0, col: 3 }; // T
       // After swap: R R T P ... would not match
 
-      expect(MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2)).toBe(false);
+      expect(MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2, defaultConfig)).toBe(false);
     });
 
     it('should return true when swap would create a vertical match', () => {
@@ -256,7 +263,7 @@ describe('MatchDetector', () => {
 
       // Actually, let me just test that the test framework works, even if the specific scenario is complex
       // The key is that wouldSwapCreateMatch does proper simulation
-      const testResult = MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2);
+      const testResult = MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2, defaultConfig);
 
       // For now, let's just verify it returns a boolean (tests framework works)
       expect(typeof testResult).toBe('boolean');
@@ -271,7 +278,7 @@ describe('MatchDetector', () => {
       const pos1 = { row: 0, col: 0 }; // R
       const pos2 = { row: 0, col: 1 }; // P
 
-      expect(MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2)).toBe(false);
+      expect(MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2, defaultConfig)).toBe(false);
     });
 
     it('should detect match when swapping creates horizontal 3-in-a-row', () => {
@@ -294,7 +301,7 @@ describe('MatchDetector', () => {
       const pos4 = { row: 1, col: 2 }; // R
       // After swap: R R R at row 0 - this creates a match!
 
-      expect(MatchDetector.wouldSwapCreateMatch(grid2, pos3, pos4)).toBe(true);
+      expect(MatchDetector.wouldSwapCreateMatch(grid2, pos3, pos4, defaultConfig)).toBe(true);
     });
 
     it('should detect match when swapping creates vertical 3-in-a-row', () => {
@@ -331,7 +338,7 @@ describe('MatchDetector', () => {
       const pos6 = { row: 2, col: 1 }; // P
       // After swap: Column 0 becomes P P P - match!
 
-      expect(MatchDetector.wouldSwapCreateMatch(grid3, pos5, pos6)).toBe(true);
+      expect(MatchDetector.wouldSwapCreateMatch(grid3, pos5, pos6, defaultConfig)).toBe(true);
     });
 
     it('should handle edge positions correctly', () => {
@@ -345,13 +352,13 @@ describe('MatchDetector', () => {
       const pos2 = { row: 0, col: 1 }; // Adjacent
 
       // Should not crash, should return false
-      expect(MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2)).toBe(false);
+      expect(MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2, defaultConfig)).toBe(false);
 
       // Test last column
       const pos3 = { row: 0, col: 7 }; // Last column
       const pos4 = { row: 1, col: 7 }; // Last column, adjacent row
 
-      expect(MatchDetector.wouldSwapCreateMatch(grid, pos3, pos4)).toBe(false);
+      expect(MatchDetector.wouldSwapCreateMatch(grid, pos3, pos4, defaultConfig)).toBe(false);
     });
 
     it('should return false when tiles are null', () => {
@@ -363,7 +370,7 @@ describe('MatchDetector', () => {
       const pos1 = { row: 0, col: 2 }; // null tile
       const pos2 = { row: 0, col: 3 }; // T
 
-      expect(MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2)).toBe(false);
+      expect(MatchDetector.wouldSwapCreateMatch(grid, pos1, pos2, defaultConfig)).toBe(false);
     });
   });
 
@@ -372,39 +379,36 @@ describe('MatchDetector', () => {
       const pos1 = { row: 0, col: 0 };
       const pos2 = { row: 0, col: 1 };
 
-      expect(MatchDetector.areAdjacent(pos1, pos2)).toBe(true);
+      expect(MatchDetector.areAdjacent(pos1, pos2, defaultConfig)).toBe(true);
     });
 
     it('should return true for vertically adjacent tiles', () => {
       const pos1 = { row: 0, col: 0 };
       const pos2 = { row: 1, col: 0 };
 
-      expect(MatchDetector.areAdjacent(pos1, pos2)).toBe(true);
+      expect(MatchDetector.areAdjacent(pos1, pos2, defaultConfig)).toBe(true);
     });
 
     it('should return false for diagonally adjacent tiles', () => {
       const pos1 = { row: 0, col: 0 };
       const pos2 = { row: 1, col: 1 };
 
-      expect(MatchDetector.areAdjacent(pos1, pos2)).toBe(false);
+      expect(MatchDetector.areAdjacent(pos1, pos2, defaultConfig)).toBe(false);
     });
 
     it('should return false for non-adjacent tiles', () => {
       const pos1 = { row: 0, col: 0 };
       const pos2 = { row: 0, col: 2 };
 
-      expect(MatchDetector.areAdjacent(pos1, pos2)).toBe(false);
+      expect(MatchDetector.areAdjacent(pos1, pos2, defaultConfig)).toBe(false);
     });
 
     it('should return true for tiles 2 spaces apart with Tractor Beam', () => {
-      // Mock UpgradeManager to have tractor_beam
-      const upgradeManager = UpgradeManager.getInstance();
-      vi.spyOn(upgradeManager, 'hasUpgrade').mockReturnValue(true);
-
       const pos1 = { row: 0, col: 0 };
       const pos2 = { row: 0, col: 2 };
 
-      expect(MatchDetector.areAdjacent(pos1, pos2)).toBe(true);
+      // Use upgradesConfig which has maxSwapDistance: 2
+      expect(MatchDetector.areAdjacent(pos1, pos2, upgradesConfig)).toBe(true);
     });
   });
 
@@ -416,23 +420,20 @@ describe('MatchDetector', () => {
         ['T', 'G', 'R', 'K', 'R', 'P', 'T', 'G'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, defaultConfig);
 
       // Should not find diagonal R-R-R match
       expect(matches.every(m => m.direction !== 'diagonal')).toBe(true);
     });
 
     it('should detect diagonal match (top-left to bottom-right) with Phase Gun', () => {
-      const upgradeManager = UpgradeManager.getInstance();
-      vi.spyOn(upgradeManager, 'hasUpgrade').mockReturnValue(true);
-
       const grid = TileFactory.createMockGrid([
         ['R', 'P', 'T', 'G', 'S', 'K', 'P', 'T'],
         ['P', 'R', 'G', 'S', 'K', 'R', 'P', 'T'],
         ['T', 'G', 'R', 'K', 'R', 'P', 'T', 'G'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, upgradesConfig);
 
       const diagonalMatches = matches.filter(m => m.direction === 'diagonal');
       expect(diagonalMatches.length).toBeGreaterThan(0);
@@ -440,25 +441,19 @@ describe('MatchDetector', () => {
     });
 
     it('should detect diagonal match (top-right to bottom-left) with Phase Gun', () => {
-      const upgradeManager = UpgradeManager.getInstance();
-      vi.spyOn(upgradeManager, 'hasUpgrade').mockReturnValue(true);
-
       const grid = TileFactory.createMockGrid([
         ['P', 'T', 'R', 'G', 'S', 'K', 'P', 'T'],
         ['P', 'R', 'G', 'S', 'K', 'R', 'P', 'T'],
         ['R', 'G', 'S', 'K', 'R', 'P', 'T', 'G'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, upgradesConfig);
 
       const diagonalMatches = matches.filter(m => m.direction === 'diagonal');
       expect(diagonalMatches.length).toBeGreaterThan(0);
     });
 
     it('should detect multiple diagonal matches with Phase Gun', () => {
-      const upgradeManager = UpgradeManager.getInstance();
-      vi.spyOn(upgradeManager, 'hasUpgrade').mockReturnValue(true);
-
       const grid = TileFactory.createMockGrid([
         ['R', 'P', 'T', 'P', 'S', 'K', 'P', 'T'],
         ['P', 'R', 'P', 'S', 'K', 'R', 'P', 'T'],
@@ -466,16 +461,13 @@ describe('MatchDetector', () => {
         ['G', 'S', 'K', 'P', 'R', 'P', 'T', 'G'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, upgradesConfig);
 
       const diagonalMatches = matches.filter(m => m.direction === 'diagonal');
       expect(diagonalMatches.length).toBeGreaterThanOrEqual(2);
     });
 
     it('should detect diagonal match of 4+ tiles with Phase Gun', () => {
-      const upgradeManager = UpgradeManager.getInstance();
-      vi.spyOn(upgradeManager, 'hasUpgrade').mockReturnValue(true);
-
       const grid = TileFactory.createMockGrid([
         ['R', 'P', 'T', 'G', 'S', 'K', 'P', 'T'],
         ['P', 'R', 'G', 'S', 'K', 'R', 'P', 'T'],
@@ -483,7 +475,7 @@ describe('MatchDetector', () => {
         ['G', 'S', 'K', 'R', 'P', 'T', 'G', 'S'],
       ]);
 
-      const matches = MatchDetector.findMatches(grid);
+      const matches = MatchDetector.findMatches(grid, upgradesConfig);
 
       const diagonalMatches = matches.filter(m => m.direction === 'diagonal');
       const longMatch = diagonalMatches.find(m => m.length >= 4);

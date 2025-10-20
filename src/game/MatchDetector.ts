@@ -1,18 +1,19 @@
 import { Tile } from './Tile';
-import { UpgradeManager } from './UpgradeManager';
-import type { TilePosition, MatchGroup, TileColor } from '../types';
+import type { TilePosition, MatchGroup, TileColor, MatchConfig } from '../types';
 
 /**
  * Utility class for detecting matches in the grid
  * A match is 3 or more tiles of the same color in a row (horizontal, vertical, or diagonal with Phase Gun)
+ * Now accepts configuration instead of querying upgrade state directly
  */
 export class MatchDetector {
   /**
    * Finds all matches in the current grid state
    * @param tiles - 2D array representing the current grid
+   * @param config - Match detection configuration (diagonal matching, swap distance)
    * @returns Array of match groups with full type information
    */
-  public static findMatches(tiles: (Tile | null)[][]): MatchGroup[] {
+  public static findMatches(tiles: (Tile | null)[][], config: MatchConfig): MatchGroup[] {
     const matches: MatchGroup[] = [];
     const gridHeight = tiles.length;
     const gridWidth = tiles[0]?.length || 0;
@@ -105,9 +106,8 @@ export class MatchDetector {
       }
     }
 
-    // Check diagonal matches if Phase Gun is active
-    const upgradeManager = UpgradeManager.getInstance();
-    if (upgradeManager.hasUpgrade('phase_gun')) {
+    // Check diagonal matches if enabled via config
+    if (config.allowDiagonals) {
       const diagonalMatches = this.findDiagonalMatches(tiles);
       matches.push(...diagonalMatches);
     }
@@ -234,6 +234,7 @@ export class MatchDetector {
    * @param row - Row to check
    * @param col - Column to check
    * @param color - Color to test at this position
+   * @param config - Match detection configuration
    * @param swapPos - Optional second position that's also changing (for swap validation)
    * @param swapColor - Color at the swap position after the swap
    * @returns true if this position with this color would create a match
@@ -243,6 +244,7 @@ export class MatchDetector {
     row: number,
     col: number,
     color: TileColor,
+    config: MatchConfig,
     swapPos?: TilePosition,
     swapColor?: TileColor
   ): boolean {
@@ -303,9 +305,8 @@ export class MatchDetector {
 
     if (verticalCount >= 3) return true;
 
-    // Check diagonal matches if Phase Gun is active
-    const upgradeManager = UpgradeManager.getInstance();
-    if (upgradeManager.hasUpgrade('phase_gun')) {
+    // Check diagonal matches if enabled via config
+    if (config.allowDiagonals) {
       // Diagonal: top-left to bottom-right
       let diagonalCount1 = 1;
 
@@ -363,12 +364,14 @@ export class MatchDetector {
    * @param tiles - Current grid state
    * @param pos1 - Position of first tile to swap
    * @param pos2 - Position of second tile to swap
+   * @param config - Match detection configuration
    * @returns true if the swap would create at least one match
    */
   public static wouldSwapCreateMatch(
     tiles: (Tile | null)[][],
     pos1: TilePosition,
-    pos2: TilePosition
+    pos2: TilePosition,
+    config: MatchConfig
   ): boolean {
     const tile1 = tiles[pos1.row][pos1.col];
     const tile2 = tiles[pos2.row][pos2.col];
@@ -377,13 +380,13 @@ export class MatchDetector {
 
     // Check if pos1 with tile2's color would create a match
     // (also accounting for pos2 having tile1's color)
-    if (this.wouldPositionMatch(tiles, pos1.row, pos1.col, tile2.color, pos2, tile1.color)) {
+    if (this.wouldPositionMatch(tiles, pos1.row, pos1.col, tile2.color, config, pos2, tile1.color)) {
       return true;
     }
 
     // Check if pos2 with tile1's color would create a match
     // (also accounting for pos1 having tile2's color)
-    if (this.wouldPositionMatch(tiles, pos2.row, pos2.col, tile1.color, pos1, tile2.color)) {
+    if (this.wouldPositionMatch(tiles, pos2.row, pos2.col, tile1.color, config, pos1, tile2.color)) {
       return true;
     }
 
@@ -395,15 +398,15 @@ export class MatchDetector {
    * With Tractor Beam upgrade, tiles can be 2 spaces apart
    * @param pos1 - First position
    * @param pos2 - Second position
+   * @param config - Match detection configuration
    * @returns true if positions are within valid swap distance
    */
-  public static areAdjacent(pos1: TilePosition, pos2: TilePosition): boolean {
+  public static areAdjacent(pos1: TilePosition, pos2: TilePosition, config: MatchConfig): boolean {
     const rowDiff = Math.abs(pos1.row - pos2.row);
     const colDiff = Math.abs(pos1.col - pos2.col);
 
-    // Determine max distance based on Tractor Beam upgrade
-    const upgradeManager = UpgradeManager.getInstance();
-    const maxDistance = upgradeManager.hasUpgrade('tractor_beam') ? 2 : 1;
+    // Use configured max distance instead of querying upgrades
+    const maxDistance = config.maxSwapDistance;
 
     // Valid swap means within maxDistance in one direction, zero in the other
     return (rowDiff <= maxDistance && colDiff === 0) || (rowDiff === 0 && colDiff <= maxDistance);
