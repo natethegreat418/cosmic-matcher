@@ -20,7 +20,7 @@ describe('LocalStorageManager', () => {
       const shopSystem = ShopSystem.getInstance();
 
       // Setup some game state
-      progressManager.completeRound(500);
+      progressManager.completeRound(1000); // Pass Round 1 (threshold: 800)
       shopSystem.purchaseItem('bonus_time');
 
       LocalStorageManager.saveGame();
@@ -30,8 +30,8 @@ describe('LocalStorageManager', () => {
 
       const parsed = JSON.parse(saved!);
       expect(parsed.currentRound).toBe(2);
-      expect(parsed.totalScore).toBe(DEV_CONFIG.startingScore + 350); // startingScore + 500 - 150 (bonus_time cost)
-      expect(parsed.roundScores).toEqual([500]);
+      expect(parsed.totalScore).toBe(DEV_CONFIG.startingScore + 850); // startingScore + 1000 - 150 (bonus_time cost)
+      expect(parsed.roundScores).toEqual([1000]);
     });
 
     it('should include shop purchase counts', () => {
@@ -39,7 +39,7 @@ describe('LocalStorageManager', () => {
       const shopSystem = ShopSystem.getInstance();
 
       // Need to have points to purchase
-      progressManager.completeRound(500);
+      progressManager.completeRound(1000); // Pass Round 1 (threshold: 800)
       shopSystem.purchaseItem('bonus_time');
 
       LocalStorageManager.saveGame();
@@ -93,7 +93,7 @@ describe('LocalStorageManager', () => {
     it('should load saved game state', () => {
       // Save a game first
       const progressManager = GameProgressManager.getInstance();
-      progressManager.completeRound(500);
+      progressManager.completeRound(1000); // Pass Round 1 (threshold: 800)
       LocalStorageManager.saveGame();
 
       // Clear and reload
@@ -102,8 +102,8 @@ describe('LocalStorageManager', () => {
 
       expect(loaded).not.toBeNull();
       expect(loaded!.currentRound).toBe(2);
-      expect(loaded!.totalScore).toBe(DEV_CONFIG.startingScore + 500);
-      expect(loaded!.roundScores).toEqual([500]);
+      expect(loaded!.totalScore).toBe(DEV_CONFIG.startingScore + 1000);
+      expect(loaded!.roundScores).toEqual([1000]);
     });
 
     it('should return null for invalid JSON', () => {
@@ -186,8 +186,8 @@ describe('LocalStorageManager', () => {
       const progressManager = GameProgressManager.getInstance();
       const shopSystem = ShopSystem.getInstance();
 
-      progressManager.completeRound(500);
-      progressManager.completeRound(600);
+      progressManager.completeRound(1000); // Pass Round 1 (threshold: 800)
+      progressManager.completeRound(1200); // Pass Round 2 (threshold: 1000)
       shopSystem.purchaseItem('bonus_time');
       progressManager.addUpgrade('phase_gun');
 
@@ -210,8 +210,8 @@ describe('LocalStorageManager', () => {
 
       // Verify restored state
       expect(newProgressManager.getCurrentRound()).toBe(3);
-      expect(newProgressManager.getTotalScore()).toBe(DEV_CONFIG.startingScore + 950); // startingScore + 500 + 600 - 150
-      expect(newProgressManager.getRoundScores()).toEqual([500, 600]);
+      expect(newProgressManager.getTotalScore()).toBe(DEV_CONFIG.startingScore + 2050); // startingScore + 1000 + 1200 - 150
+      expect(newProgressManager.getRoundScores()).toEqual([1000, 1200]);
       expect(newProgressManager.getOwnedUpgrades()).toContain('bonus_time');
       expect(newProgressManager.getOwnedUpgrades()).toContain('phase_gun');
       expect(newShopSystem.getItemPurchaseCount('bonus_time')).toBe(1);

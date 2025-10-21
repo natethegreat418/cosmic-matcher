@@ -344,12 +344,14 @@ export const DEV_CONFIG = {
 
 Direct navigation to any game scene via URL parameters or browser console commands.
 
+**CRITICAL: Dev navigation ONLY works on `/game.html`, NOT on the root `/` landing page!**
+
 **URL Parameters** (Perfect for MCP Chrome DevTools):
 ```
-http://localhost:5173?scene=shop&round=7&points=10000&score=15000
-http://localhost:5173?scene=gameover&round=10&upgrades=phase_gun,tractor_beam
-http://localhost:5173?scene=transition&round=5
-http://localhost:5173?scene=game&round=3&points=5000
+http://localhost:5175/game.html?scene=shop&round=7&points=10000&score=15000
+http://localhost:5175/game.html?scene=gameover&round=10&upgrades=phase_gun,tractor_beam
+http://localhost:5175/game.html?scene=transition&round=5
+http://localhost:5175/game.html?scene=game&round=3&points=5000
 ```
 
 **Supported Parameters:**
@@ -402,19 +404,19 @@ http://localhost:5173?scene=game&round=3&points=5000
 
 **Common Scene Navigation URLs for Testing:**
 
-- **GameScene (mid-game)**: `?scene=game&round=5&points=2000`
-- **ShopScene (with funds)**: `?scene=shop&round=3&points=10000`
-- **RoundTransitionScene**: `?scene=transition&round=7&score=8000`
-- **GameOverScene**: `?scene=gameover&round=10&score=50000&upgrades=phase_gun,tractor_beam`
+- **GameScene (mid-game)**: `/game.html?scene=game&round=5&points=2000`
+- **ShopScene (with funds)**: `/game.html?scene=shop&round=3&points=10000`
+- **RoundTransitionScene**: `/game.html?scene=transition&round=7&score=8000`
+- **GameOverScene**: `/game.html?scene=gameover&round=10&score=50000&upgrades=phase_gun,tractor_beam`
 
 **Mobile Testing:**
 ```javascript
 // Resize to mobile viewport
 mcp__chrome-devtools__resize_page({ width: 375, height: 667 })
 
-// Navigate to scene
+// Navigate to scene (MUST use /game.html!)
 mcp__chrome-devtools__navigate_page({
-  url: 'http://localhost:5173?scene=shop&round=5&points=10000'
+  url: 'http://localhost:5175/game.html?scene=shop&round=5&points=10000'
 })
 
 // Verify mobile layout
@@ -423,13 +425,13 @@ mcp__chrome-devtools__take_screenshot({ fullPage: true })
 
 **Example: Complete UI Verification Flow**
 ```javascript
-// 1. Navigate to shop at round 7 with plenty of points
+// 1. Navigate to shop at round 7 with plenty of points (MUST use /game.html!)
 mcp__chrome-devtools__navigate_page({
-  url: 'http://localhost:5173?scene=shop&round=7&points=15000'
+  url: 'http://localhost:5175/game.html?scene=shop&round=7&points=15000'
 })
 
 // 2. Wait for scene to load
-mcp__chrome-devtools__wait_for({ text: 'Cosmic Shop' })
+mcp__chrome-devtools__wait_for({ text: 'COSMIC SHOP' })
 
 // 3. Take snapshot to verify layout
 mcp__chrome-devtools__take_snapshot()
@@ -448,6 +450,14 @@ mcp__chrome-devtools__list_console_messages()
 - ✅ Debugging upgrade effects at specific game states
 - ✅ Mobile responsive testing for all scenes
 - ✅ Screenshot documentation of UI states
+
+**When NOT to Use Dev Navigation / MCP Chrome DevTools:**
+- ❌ Answering questions about code specifications (PNG resolution, file formats, etc.) - just read the code
+- ❌ Answering questions about game mechanics or configuration - read `GameConfig.ts` or relevant files
+- ❌ Checking display sizes for UI elements - read `ResponsiveConfig.ts`
+- ❌ Understanding shop item prices - read `GameConfig.SHOP_ITEMS`
+- ❌ General code questions that can be answered by reading source files
+- **Rule of thumb**: Only use browser navigation when you need to **verify actual rendering/behavior**, not to answer questions about **specifications or implementation details**
 
 ### Testing Strategy
 
@@ -482,8 +492,8 @@ mcp__chrome-devtools__list_console_messages()
 
 **MCP Tools**: Use `navigate_page()`, `take_screenshot()`, `evaluate_script()`, `list_console_messages()` for testing.
 
-**Common Test URLs:**
-- Shop: `?scene=shop&round=3&points=10000`
-- Game Over: `?scene=gameover&round=10&score=50000&upgrades=phase_gun`
+**Common Test URLs (MUST use /game.html prefix):**
+- Shop: `/game.html?scene=shop&round=3&points=10000`
+- Game Over: `/game.html?scene=gameover&round=10&score=50000&upgrades=phase_gun`
 
 **Note**: `getBoundingClientRect` errors in console are from MCP DevTools interacting with Phaser canvas, not game errors.

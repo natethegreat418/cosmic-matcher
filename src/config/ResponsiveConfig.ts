@@ -255,13 +255,12 @@ export const getShopLayout = () => {
 
   if (isMobile()) {
     return {
-      header: { y: 20, fontSize: '30px', letterSpacing: '0px' },
-      totalScore: { y: 52, fontSize: '20px', fontWeight: 'bold' },
-      description: { y: 78, fontSize: '12px', lineHeight: 1.2, maxWidth: canvasWidth - 40 },
-      warning: { y: 98, fontSize: '11px', color: '#ff6b9d' },
-      pageIndicator: { y: 118, fontSize: '13px' },
+      header: { y: 25, fontSize: '30px', letterSpacing: '0px' },
+      totalScore: { y: 57, fontSize: '20px', fontWeight: 'bold' },
+      description: { y: 83, fontSize: '12px', lineHeight: 1.2, maxWidth: canvasWidth - 40 },
+      warning: { y: 103, fontSize: '11px', color: '#ff6b9d' },
       cards: {
-        startY: 145,
+        startY: 170,
         cardHeight: 85,
         gap: 10,
         paddingTop: 10,
@@ -284,6 +283,7 @@ export const getShopLayout = () => {
         buttonFontSize: '14px',
         buttonFontWeight: 'bold'
       },
+      pageIndicator: { y: 420, fontSize: '15px' },
       messageArea: { y: 460 },
       bottomButton: {
         y: height - 70,
@@ -296,13 +296,12 @@ export const getShopLayout = () => {
 
   // Desktop layout
   return {
-    header: { y: 40, fontSize: '44px', letterSpacing: '1px' },
-    totalScore: { y: 88, fontSize: '26px', fontWeight: 'bold' },
-    description: { y: 125, fontSize: '17px', lineHeight: 1.3, maxWidth: 800 },
-    warning: { y: 158, fontSize: '15px', color: '#ff6b9d' },
-    pageIndicator: { y: 185, fontSize: '16px' },
+    header: { y: 50, fontSize: '44px', letterSpacing: '1px' },
+    totalScore: { y: 98, fontSize: '26px', fontWeight: 'bold' },
+    description: { y: 135, fontSize: '17px', lineHeight: 1.3, maxWidth: 800 },
+    warning: { y: 168, fontSize: '15px', color: '#ff6b9d' },
     cards: {
-      startY: 220,
+      startY: 225,
       cardHeight: 110,
       width: 800,
       centerX: canvasWidth / 2,
@@ -327,6 +326,7 @@ export const getShopLayout = () => {
       buttonFontSize: '17px',
       buttonFontWeight: 'bold'
     },
+    pageIndicator: { y: 570, fontSize: '16px' },
     messageArea: { y: 600 },
     bottomButton: {
       y: height - 80,

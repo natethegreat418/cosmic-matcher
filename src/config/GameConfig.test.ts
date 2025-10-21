@@ -72,19 +72,6 @@ describe('GameConfig Helpers', () => {
     });
   });
 
-  describe('getBaseRoundTimer', () => {
-    it('should return dev timer when isDev is true', () => {
-      const devTimer = GameConfigHelpers.getBaseRoundTimer(true);
-      expect(devTimer).toBe(TIMER_CONFIG.DEV_ROUND_TIMER);
-      expect(devTimer).toBe(15);
-    });
-
-    it('should return production timer when isDev is false', () => {
-      const prodTimer = GameConfigHelpers.getBaseRoundTimer(false);
-      expect(prodTimer).toBe(TIMER_CONFIG.PRODUCTION_ROUND_TIMER);
-      expect(prodTimer).toBe(60);
-    });
-  });
 
   describe('getTimerColor', () => {
     it('should return pink for danger zone (≤10 seconds)', () => {

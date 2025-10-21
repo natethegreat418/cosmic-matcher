@@ -31,18 +31,18 @@ describe('LivesManager', () => {
   describe('checkRoundCompletion', () => {
     it('should pass round when score meets threshold', () => {
       const manager = LivesManager.getInstance();
-      const result = manager.checkRoundCompletion(1, 500); // Round 1 threshold is 500
+      const result = manager.checkRoundCompletion(1, 800); // Round 1 threshold is 800
 
       expect(result.passed).toBe(true);
       expect(result.livesRemaining).toBe(LIVES_CONFIG.STARTING_LIVES);
       expect(result.isGameOver).toBe(false);
-      expect(result.threshold).toBe(500);
-      expect(result.score).toBe(500);
+      expect(result.threshold).toBe(800);
+      expect(result.score).toBe(800);
     });
 
     it('should pass round when score exceeds threshold', () => {
       const manager = LivesManager.getInstance();
-      const result = manager.checkRoundCompletion(1, 750);
+      const result = manager.checkRoundCompletion(1, 1000);
 
       expect(result.passed).toBe(true);
       expect(result.livesRemaining).toBe(LIVES_CONFIG.STARTING_LIVES);
@@ -50,7 +50,7 @@ describe('LivesManager', () => {
 
     it('should fail round when score below threshold', () => {
       const manager = LivesManager.getInstance();
-      const result = manager.checkRoundCompletion(1, 400); // Round 1 threshold is 500
+      const result = manager.checkRoundCompletion(1, 700); // Round 1 threshold is 800
 
       expect(result.passed).toBe(false);
       expect(result.livesRemaining).toBe(LIVES_CONFIG.STARTING_LIVES - 1);
@@ -61,7 +61,7 @@ describe('LivesManager', () => {
       const manager = LivesManager.getInstance();
       const initialLives = manager.getLives();
 
-      manager.checkRoundCompletion(1, 400); // Fail round 1
+      manager.checkRoundCompletion(1, 700); // Fail round 1
 
       expect(manager.getLives()).toBe(initialLives - 1);
     });
@@ -70,7 +70,7 @@ describe('LivesManager', () => {
       const manager = LivesManager.getInstance();
       const initialLives = manager.getLives();
 
-      manager.checkRoundCompletion(1, 500); // Pass round 1
+      manager.checkRoundCompletion(1, 800); // Pass round 1
 
       expect(manager.getLives()).toBe(initialLives);
     });
@@ -79,17 +79,17 @@ describe('LivesManager', () => {
       const manager = LivesManager.getInstance();
 
       // Fail round 1
-      let result = manager.checkRoundCompletion(1, 400);
+      let result = manager.checkRoundCompletion(1, 700);
       expect(result.livesRemaining).toBe(2);
       expect(result.isGameOver).toBe(false);
 
       // Fail round 1 again
-      result = manager.checkRoundCompletion(1, 450);
+      result = manager.checkRoundCompletion(1, 750);
       expect(result.livesRemaining).toBe(1);
       expect(result.isGameOver).toBe(false);
 
       // Fail round 1 final time
-      result = manager.checkRoundCompletion(1, 499);
+      result = manager.checkRoundCompletion(1, 799);
       expect(result.livesRemaining).toBe(0);
       expect(result.isGameOver).toBe(true);
     });
@@ -98,7 +98,7 @@ describe('LivesManager', () => {
       const manager = LivesManager.getInstance();
       manager.setLives(1); // Set to 1 life
 
-      const result = manager.checkRoundCompletion(1, 400); // Fail
+      const result = manager.checkRoundCompletion(1, 700); // Fail
 
       expect(result.livesRemaining).toBe(0);
       expect(result.isGameOver).toBe(true);
@@ -108,16 +108,16 @@ describe('LivesManager', () => {
     it('should use correct thresholds for each round', () => {
       const manager = LivesManager.getInstance();
 
-      const result1 = manager.checkRoundCompletion(1, 500);
-      expect(result1.threshold).toBe(500);
+      const result1 = manager.checkRoundCompletion(1, 800);
+      expect(result1.threshold).toBe(800);
       expect(result1.passed).toBe(true);
 
-      const result5 = manager.checkRoundCompletion(5, 1200);
-      expect(result5.threshold).toBe(1200);
+      const result5 = manager.checkRoundCompletion(5, 1500);
+      expect(result5.threshold).toBe(1500);
       expect(result5.passed).toBe(true);
 
-      const result10 = manager.checkRoundCompletion(10, 3000);
-      expect(result10.threshold).toBe(3000);
+      const result10 = manager.checkRoundCompletion(10, 3500);
+      expect(result10.threshold).toBe(3500);
       expect(result10.passed).toBe(true);
     });
   });
@@ -125,7 +125,7 @@ describe('LivesManager', () => {
   describe('reset', () => {
     it('should reset lives to starting value', () => {
       const manager = LivesManager.getInstance();
-      manager.checkRoundCompletion(1, 400); // Lose a life
+      manager.checkRoundCompletion(1, 700); // Lose a life
 
       manager.reset();
 
@@ -153,16 +153,16 @@ describe('LivesManager', () => {
   describe('edge cases', () => {
     it('should handle round at exact threshold', () => {
       const manager = LivesManager.getInstance();
-      const result = manager.checkRoundCompletion(3, 800); // Round 3 threshold is 800
+      const result = manager.checkRoundCompletion(3, 1200); // Round 3 threshold is 1200
 
       expect(result.passed).toBe(true);
-      expect(result.score).toBe(800);
-      expect(result.threshold).toBe(800);
+      expect(result.score).toBe(1200);
+      expect(result.threshold).toBe(1200);
     });
 
     it('should handle round one point below threshold', () => {
       const manager = LivesManager.getInstance();
-      const result = manager.checkRoundCompletion(3, 799); // Round 3 threshold is 800
+      const result = manager.checkRoundCompletion(3, 1199); // Round 3 threshold is 1200
 
       expect(result.passed).toBe(false);
       expect(manager.getLives()).toBe(LIVES_CONFIG.STARTING_LIVES - 1);
@@ -192,23 +192,23 @@ describe('LivesManager', () => {
     it('should handle realistic game progression', () => {
       const manager = LivesManager.getInstance();
 
-      // Pass round 1
-      let result = manager.checkRoundCompletion(1, 600);
+      // Pass round 1 (threshold: 800)
+      let result = manager.checkRoundCompletion(1, 900);
       expect(result.passed).toBe(true);
       expect(manager.getLives()).toBe(3);
 
-      // Pass round 2
-      result = manager.checkRoundCompletion(2, 700);
+      // Pass round 2 (threshold: 1000)
+      result = manager.checkRoundCompletion(2, 1100);
       expect(result.passed).toBe(true);
       expect(manager.getLives()).toBe(3);
 
-      // Fail round 3 (need 800)
-      result = manager.checkRoundCompletion(3, 750);
+      // Fail round 3 (threshold: 1200)
+      result = manager.checkRoundCompletion(3, 1100);
       expect(result.passed).toBe(false);
       expect(manager.getLives()).toBe(2);
 
       // Pass round 3 retry
-      result = manager.checkRoundCompletion(3, 850);
+      result = manager.checkRoundCompletion(3, 1300);
       expect(result.passed).toBe(true);
       expect(manager.getLives()).toBe(2);
 

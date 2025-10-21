@@ -122,15 +122,13 @@ export class ShopScene extends Phaser.Scene {
       }
     ).setOrigin(0.5, 0.5);
 
-    // Pagination controls
-    const availableItems = this.shopSystem.getAvailableItems();
-    const totalPages = Math.ceil(availableItems.length / this.itemsPerPage);
-    if (totalPages > 1) {
-      this.createPaginationControls(centerX, layout.pageIndicator.y, totalPages);
-    }
-
     // Display shop items
     this.displayShopItems(centerX, layout.cards.startY);
+
+    // Pagination controls - always show to indicate swipe capability (below items)
+    const availableItems = this.shopSystem.getAvailableItems();
+    const totalPages = Math.ceil(availableItems.length / this.itemsPerPage);
+    this.createPaginationControls(centerX, layout.pageIndicator.y, totalPages);
 
     // Message area - use fixed position from layout to avoid overlaps
     const messageY = layout.messageArea?.y || (layout.cards.startY + 350);
@@ -459,18 +457,19 @@ export class ShopScene extends Phaser.Scene {
 
   private createPaginationControls(centerX: number, y: number, totalPages: number): void {
     const isMobile = GAME_CONFIG.IS_MOBILE;
-    const fontSize = isMobile ? '14px' : '14px'; // Smaller pagination text
-    const buttonSize = isMobile ? 32 : 32; // Smaller pagination buttons
+    const fontSize = isMobile ? '15px' : '16px';
+    const buttonSize = isMobile ? 32 : 32;
 
-    // Page indicator text
+    // Page indicator text - always show, even for single page
     const pageText = this.add.text(
       centerX,
       y,
       `Page ${this.currentPage + 1} of ${totalPages}`,
       {
         fontSize: fontSize,
-        color: '#cccccc',
-        fontFamily: 'Arial, sans-serif'
+        color: totalPages > 1 ? '#00F5FF' : '#888888', // Highlight if multiple pages
+        fontFamily: 'Arial, sans-serif',
+        fontStyle: totalPages > 1 ? 'bold' : 'normal'
       }
     );
     pageText.setOrigin(0.5, 0.5);
@@ -511,18 +510,29 @@ export class ShopScene extends Phaser.Scene {
     }
 
     // Swipe hint on mobile - positioned below pagination to avoid overlap
-    if (isMobile) {
-      this.add.text(
+    if (isMobile && totalPages > 1) {
+      const swipeHint = this.add.text(
         centerX,
         y + 22,
-        'Swipe to browse',
+        '← Swipe to browse →',
         {
-          fontSize: '11px',
-          color: '#888888',
+          fontSize: '12px',
+          color: '#00F5FF',
           fontFamily: 'Arial, sans-serif',
           fontStyle: 'italic'
         }
-      ).setOrigin(0.5, 0.5);
+      );
+      swipeHint.setOrigin(0.5, 0.5);
+
+      // Pulse animation to draw attention
+      this.tweens.add({
+        targets: swipeHint,
+        alpha: { from: 0.5, to: 1 },
+        duration: 1000,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut'
+      });
     }
   }
 

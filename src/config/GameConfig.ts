@@ -95,11 +95,8 @@ export const UPGRADE_EFFECTS = {
  * Timer and round progression configuration
  */
 export const TIMER_CONFIG = {
-  /** Base timer duration in production (seconds) */
-  PRODUCTION_ROUND_TIMER: 60,
-
-  /** Timer duration in development mode (seconds) */
-  DEV_ROUND_TIMER: 15,
+  /** Base round duration in seconds (production value) */
+  BASE_ROUND_DURATION: 60,
 
   /** Timer speed multipliers by round pair */
   SPEED_MULTIPLIERS: {
@@ -132,16 +129,16 @@ export const LIVES_CONFIG = {
 
   /** Minimum score required to pass each round */
   ROUND_THRESHOLDS: [
-    { round: 1, minScore: 500 },
-    { round: 2, minScore: 600 },
-    { round: 3, minScore: 800 },
-    { round: 4, minScore: 1000 },
-    { round: 5, minScore: 1200 },
-    { round: 6, minScore: 1400 },
-    { round: 7, minScore: 1800 },
+    { round: 1, minScore: 800 },
+    { round: 2, minScore: 1000 },
+    { round: 3, minScore: 1200 },
+    { round: 4, minScore: 1500 },
+    { round: 5, minScore: 1500 },
+    { round: 6, minScore: 1800 },
+    { round: 7, minScore: 2000 },
     { round: 8, minScore: 2000 },
     { round: 9, minScore: 2500 },
-    { round: 10, minScore: 3000 },
+    { round: 10, minScore: 3500 },
   ],
 } as const;
 
@@ -222,14 +219,6 @@ export const GameConfigHelpers = {
     const item = SHOP_ITEMS[itemId];
     const count = Math.max(0, purchaseCount); // Guard against negative counts
     return Math.round(item.baseCost * Math.pow(SHOP_PRICING.COST_SCALING_MULTIPLIER, count));
-  },
-
-  /**
-   * Get base round timer (dev vs production)
-   * Note: Actual dev/production detection is in DevConfig.ts
-   */
-  getBaseRoundTimer(isDev: boolean = import.meta.env.DEV): number {
-    return isDev ? TIMER_CONFIG.DEV_ROUND_TIMER : TIMER_CONFIG.PRODUCTION_ROUND_TIMER;
   },
 
   /**

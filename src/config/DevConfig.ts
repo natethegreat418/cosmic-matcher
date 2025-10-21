@@ -3,6 +3,8 @@
  * These settings only apply when running in local development mode.
  */
 
+import { TIMER_CONFIG } from './GameConfig';
+
 const isDev = import.meta.env.DEV;
 
 export const DEV_CONFIG = {
@@ -20,8 +22,8 @@ export const DEV_CONFIG = {
 
   /**
    * Round timer duration in seconds
-   * Production: 60
-   * Dev: 15 (for faster iteration)
+   * Production: Uses TIMER_CONFIG.BASE_ROUND_DURATION (60s)
+   * Dev: 15s (for faster iteration)
    */
-  timerSeconds: isDev ? 15 : 60,
+  timerSeconds: isDev ? 15 : TIMER_CONFIG.BASE_ROUND_DURATION,
 } as const;
